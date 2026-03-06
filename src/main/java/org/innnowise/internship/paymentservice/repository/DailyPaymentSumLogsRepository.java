@@ -1,0 +1,17 @@
+package org.innnowise.internship.paymentservice.repository;
+
+import org.innnowise.internship.paymentservice.model.entity.DailyPaymentSumLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
+import java.util.Optional;
+
+@Repository
+public interface DailyPaymentSumLogsRepository
+        extends MongoRepository<DailyPaymentSumLog, String> {
+
+    Optional<DailyPaymentSumLog> findByDate(Instant start);
+    Page<DailyPaymentSumLog> findAllByDateBetween(Instant start, Instant end);
+}
