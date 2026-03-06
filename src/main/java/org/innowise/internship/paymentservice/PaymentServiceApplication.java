@@ -1,4 +1,4 @@
-package org.innnowise.internship.paymentservice;
+package org.innowise.internship.paymentservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
