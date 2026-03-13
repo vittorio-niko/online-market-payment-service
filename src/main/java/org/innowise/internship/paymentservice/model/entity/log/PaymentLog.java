@@ -1,4 +1,4 @@
-package org.innowise.internship.paymentservice.model.entity;
+package org.innowise.internship.paymentservice.model.entity.log;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;

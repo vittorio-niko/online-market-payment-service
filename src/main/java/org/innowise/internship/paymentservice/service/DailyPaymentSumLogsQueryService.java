@@ -3,7 +3,7 @@ package org.innowise.internship.paymentservice.service;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
-import org.innowise.internship.paymentservice.model.entity.DailyPaymentSumLog;
+import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.innowise.internship.paymentservice.repository.DailyPaymentSumLogsRepository;
 import org.innowise.internship.paymentservice.service.exception.businessexception.InvalidArgumentException;
 import org.springframework.data.domain.Page;

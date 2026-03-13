@@ -4,8 +4,8 @@ import lombok.NonNull;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreatePaymentLogRequestDto;
 import org.innowise.internship.paymentservice.model.dto.log.response.PaymentLogResponseDto;
 import org.innowise.internship.paymentservice.model.dto.log.response.PaymentLogSummaryResponseDto;
-import org.innowise.internship.paymentservice.model.entity.PaymentLog;
-import org.innowise.internship.paymentservice.model.entity.PaymentStatus;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

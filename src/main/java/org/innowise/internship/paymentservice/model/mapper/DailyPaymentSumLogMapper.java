@@ -3,7 +3,7 @@ package org.innowise.internship.paymentservice.model.mapper;
 import lombok.NonNull;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreateDailyPaymentSumLogRequestDto;
 import org.innowise.internship.paymentservice.model.dto.log.response.DailyPaymentSumLogResponseDto;
-import org.innowise.internship.paymentservice.model.entity.DailyPaymentSumLog;
+import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
