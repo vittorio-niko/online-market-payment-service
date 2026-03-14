@@ -1,4 +1,4 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.messageservice;
 
 import com.mongodb.DuplicateKeyException;
 import lombok.NonNull;

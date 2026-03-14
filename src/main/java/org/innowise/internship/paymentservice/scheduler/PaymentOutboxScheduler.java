@@ -5,8 +5,7 @@ import org.innowise.internship.paymentservice.model.dto.messagerequest.PaymentRe
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
 import org.innowise.internship.paymentservice.model.mapper.PaymentOutboxRequestMapper;
-import org.innowise.internship.paymentservice.repository.PaymentOutboxRepository;
-import org.innowise.internship.paymentservice.service.PaymentOutboxService;
+import org.innowise.internship.paymentservice.service.messageservice.PaymentOutboxService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -2,7 +2,7 @@ package org.innowise.internship.paymentservice.scheduler;
 
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreateDailyPaymentSumLogRequestDto;
-import org.innowise.internship.paymentservice.service.DailyPaymentSumLogsService;
+import org.innowise.internship.paymentservice.service.logservice.DailyPaymentSumLogsService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.orchestratorservice;
 
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreatePaymentLogRequestDto;
@@ -6,6 +6,9 @@ import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePay
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.model.mapper.PaymentInboxRequestMapper;
 import org.innowise.internship.paymentservice.model.mapper.PaymentOutboxRequestMapper;
+import org.innowise.internship.paymentservice.service.logservice.PaymentLogsService;
+import org.innowise.internship.paymentservice.service.messageservice.PaymentInboxService;
+import org.innowise.internship.paymentservice.service.messageservice.PaymentOutboxService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,4 +1,4 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.logservice;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
