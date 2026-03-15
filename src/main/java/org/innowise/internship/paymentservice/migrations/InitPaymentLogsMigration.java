@@ -1,8 +1,6 @@
 package org.innowise.internship.paymentservice.migrations;
 
-import io.mongock.api.annotations.ChangeUnit;
-import io.mongock.api.annotations.Execution;
-import io.mongock.api.annotations.RollbackExecution;
+import io.mongock.api.annotations.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.CollectionOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,53 +17,57 @@ import java.time.Duration;
 )
 public class InitPaymentLogsMigration {
 
-    @Execution
-    public void execution(MongoTemplate mongoTemplate) {
-        MongoJsonSchema schema = setupSchema();
+    private static final String[] statusValues = { "PENDING", "SUCCESS", "FAILURE", "REFUNDED" };
+    private static final Integer daysForPaymentToLive = 1825; // 5 years
 
+    @BeforeExecution
+    public void beforeExecution(MongoTemplate mongoTemplate) {
         if (!mongoTemplate.collectionExists("payments")) {
             mongoTemplate.createCollection("payments",
-                    CollectionOptions.empty().schema(schema));
+                    CollectionOptions.empty().schema(setupSchema()));
         }
-
         setupIndices(mongoTemplate);
     }
 
+    @Execution
+    public void execution(MongoTemplate mongoTemplate) { }
+
     @RollbackExecution
-    public void rollbackExecution(MongoTemplate mongoTemplate) {
+    public void rollbackExecution(MongoTemplate mongoTemplate) { }
+
+    @RollbackBeforeExecution
+    public void rollbackBeforeExecution(MongoTemplate mongoTemplate) {
         mongoTemplate.dropCollection("payments");
     }
 
     private void setupIndices(MongoTemplate mongoTemplate) {
-        mongoTemplate.indexOps("payments").ensureIndex(
+        var indexOps = mongoTemplate.indexOps("payments");
+
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_payments_payment_id")
                         .on("payment_id", Sort.Direction.ASC)
                         .unique()
         );
-
-        mongoTemplate.indexOps("payments").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_payments_user_id_timestamp_status")
                         .on("user_id", Sort.Direction.ASC)
                         .on("timestamp", Sort.Direction.DESC)
                         .on("status", Sort.Direction.ASC)
         );
-
-        mongoTemplate.indexOps("payments").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_payments_order_id")
                         .on("order_id", Sort.Direction.ASC)
         );
-
-        mongoTemplate.indexOps("payments").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_payments_timestamp_index")
                         .on("timestamp", Sort.Direction.DESC)
                         .on("status", Sort.Direction.ASC)
         );
-
-        mongoTemplate.indexOps("payments").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_payments_ttl")
                         .on("timestamp", Sort.Direction.ASC)
@@ -75,8 +77,7 @@ public class InitPaymentLogsMigration {
 
     private MongoJsonSchema setupSchema() {
         return MongoJsonSchema.builder()
-                .required("payment_id", "order_id", "user_id",
-                        "status", "timestamp", "payment_amount")
+                .required("payment_id", "order_id", "user_id", "status", "timestamp", "payment_amount")
                 .properties(
                         JsonSchemaProperty.string("payment_id"),
                         JsonSchemaProperty.int64("order_id"),
@@ -86,7 +87,4 @@ public class InitPaymentLogsMigration {
                         JsonSchemaProperty.decimal128("payment_amount")
                 ).build();
     }
-
-    private static final String[] statusValues = { "PENDING", "SUCCESS", "FAILURE", "REFUNDED" };
-    private static final Integer daysForPaymentToLive = 1825; // 5 years
 }

@@ -1,8 +1,6 @@
 package org.innowise.internship.paymentservice.migrations;
 
-import io.mongock.api.annotations.ChangeUnit;
-import io.mongock.api.annotations.Execution;
-import io.mongock.api.annotations.RollbackExecution;
+import io.mongock.api.annotations.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.CollectionOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,27 +17,31 @@ import java.time.Duration;
 )
 public class InitPaymentOutboxMigration {
 
-    @Execution
-    public void execute(MongoTemplate mongoTemplate) {
-        MongoJsonSchema schema = setupSchema();
+    private static final Integer daysForMessageToLive = 7;
 
+    @BeforeExecution
+    public void beforeExecution(MongoTemplate mongoTemplate) {
         if (!mongoTemplate.collectionExists("outbox_payment_requests")) {
             mongoTemplate.createCollection("outbox_payment_requests",
-                    CollectionOptions.empty().schema(schema));
+                    CollectionOptions.empty().schema(setupSchema()));
         }
-
         setupIndices(mongoTemplate);
     }
 
+    @Execution
+    public void execute(MongoTemplate mongoTemplate) { }
+
     @RollbackExecution
-    public void rollbackExecution(MongoTemplate mongoTemplate) {
+    public void rollbackExecution(MongoTemplate mongoTemplate) { }
+
+    @RollbackBeforeExecution
+    public void rollbackBeforeExecution(MongoTemplate mongoTemplate) {
         mongoTemplate.dropCollection("outbox_payment_requests");
     }
 
     private MongoJsonSchema setupSchema() {
         return MongoJsonSchema.builder()
-                .required("payment_id", "order_id", "user_id",
-                        "timestamp", "status", "attempts")
+                .required("payment_id", "order_id", "user_id", "timestamp", "status", "attempts")
                 .properties(
                         JsonSchemaProperty.string("payment_id"),
                         JsonSchemaProperty.int64("order_id"),
@@ -51,27 +53,24 @@ public class InitPaymentOutboxMigration {
     }
 
     private void setupIndices(MongoTemplate mongoTemplate) {
-        mongoTemplate.indexOps("outbox_payment_requests").ensureIndex(
+        var indexOps = mongoTemplate.indexOps("outbox_payment_requests");
+
+        indexOps.ensureIndex(
                 new Index()
-                        .named("idx_outbox_payment_requests_payment_id")
+                .named("idx_outbox_payment_requests_payment_id")
                         .on("payment_id", Sort.Direction.ASC)
                         .unique()
         );
-
-        mongoTemplate.indexOps("outbox_payment_requests").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
-                        .named("idx_outbox_payment_requests_status_timestamp")
-                        .on("status", Sort.Direction.ASC)
-                        .on("timestamp", Sort.Direction.ASC)
+                .named("idx_outbox_payment_requests_status_timestamp")
+                .on("status", Sort.Direction.ASC)
+                .on("timestamp", Sort.Direction.ASC)
         );
-
-        mongoTemplate.indexOps("outbox_payment_requests").ensureIndex(
-                new Index()
-                        .named("idx_outbox_payment_requests_ttl")
-                        .on("timestamp", Sort.Direction.ASC)
-                        .expire(Duration.ofDays(daysForMessageToLive))
+        indexOps.ensureIndex(new Index()
+                .named("idx_outbox_payment_requests_ttl")
+                .on("timestamp", Sort.Direction.ASC)
+                .expire(Duration.ofDays(daysForMessageToLive))
         );
     }
-
-    private static final Integer daysForMessageToLive = 7;
 }

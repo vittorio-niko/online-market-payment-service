@@ -1,8 +1,6 @@
 package org.innowise.internship.paymentservice.migrations;
 
-import io.mongock.api.annotations.ChangeUnit;
-import io.mongock.api.annotations.Execution;
-import io.mongock.api.annotations.RollbackExecution;
+import io.mongock.api.annotations.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.CollectionOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -17,20 +15,27 @@ import org.springframework.data.mongodb.core.schema.MongoJsonSchema;
 )
 public class InitDailyPaymentSumLogsMigration {
 
-    @Execution
-    public void execute(MongoTemplate mongoTemplate) {
-        MongoJsonSchema schema = setupSchema();
+    private static final Integer daysForPaymentSumToLive = 1825; // 5 years
 
+    @BeforeExecution
+    public void beforeExecution(MongoTemplate mongoTemplate) {
         if (!mongoTemplate.collectionExists("daily_payment_sums")) {
             mongoTemplate.createCollection("daily_payment_sums",
-                    CollectionOptions.empty().schema(schema));
+                    CollectionOptions.empty().schema(setupSchema()));
         }
-
         setupIndices(mongoTemplate);
     }
 
+    @Execution
+    public void execute(MongoTemplate mongoTemplate) { }
+
     @RollbackExecution
     public void rollbackExecution(MongoTemplate mongoTemplate) {
+        mongoTemplate.dropCollection("daily_payment_sums");
+    }
+
+    @RollbackBeforeExecution
+    public void rollbackBeforeExecution(MongoTemplate mongoTemplate) {
         mongoTemplate.dropCollection("daily_payment_sums");
     }
 
@@ -58,6 +63,4 @@ public class InitDailyPaymentSumLogsMigration {
                         .expire(java.time.Duration.ofDays(daysForPaymentSumToLive))
         );
     }
-
-    private static final Integer daysForPaymentSumToLive = 1825; // 5 years
 }
