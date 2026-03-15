@@ -1,7 +1,7 @@
 spring:
   config:
     activate:
-      on-profile: test
+      on-profile: docker
   threads:
     virtual:
       enabled: true
@@ -14,7 +14,7 @@ spring:
         journal: true
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 
     consumer:
       group-id: payment-group
@@ -54,10 +54,6 @@ app:
       publish-delay: 1000
       batch-size: 100
       retries: 5
-
-logging:
-  level:
-    io.mongock: DEBUG
 
 server:
   port: ${SERVER_PORT}
