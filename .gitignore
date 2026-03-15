@@ -35,6 +35,7 @@ target/
 *.zip
 *.tar.gz
 *.rar
+.env
 
 hs_err_pid*
 replay_pid*
