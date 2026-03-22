@@ -23,5 +23,5 @@ public class PaymentResultEventDto {
     private String userId;
 
     @NotBlank
-    private String status;
+    private String paymentStatus;
 }

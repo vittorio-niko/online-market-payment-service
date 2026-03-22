@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 
 @Data
 @NoArgsConstructor
@@ -23,5 +23,5 @@ public class CreatePaymentOutboxRequestDto {
     private String userId;
 
     @NotNull
-    private PaymentOutboxStatus status;
+    private PaymentStatus paymentStatus;
 }

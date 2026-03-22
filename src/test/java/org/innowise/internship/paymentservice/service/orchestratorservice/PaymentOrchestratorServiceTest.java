@@ -236,6 +236,7 @@ class PaymentOrchestratorServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
@@ -309,6 +310,7 @@ class PaymentOrchestratorServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
@@ -353,6 +355,7 @@ class PaymentOrchestratorServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
     }
 }

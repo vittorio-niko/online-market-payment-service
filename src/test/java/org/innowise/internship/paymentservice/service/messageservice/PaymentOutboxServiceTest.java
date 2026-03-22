@@ -2,6 +2,7 @@ package org.innowise.internship.paymentservice.service.messageservice;
 
 import com.mongodb.DuplicateKeyException;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentOutboxRequestDto;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
 import org.innowise.internship.paymentservice.model.mapper.PaymentOutboxRequestMapper;
@@ -62,12 +63,14 @@ class PaymentOutboxServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         PaymentOutboxRequest mappedRequest = PaymentOutboxRequest.builder()
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS.name())
                 .build();
 
         when(paymentOutboxRequestMapper.toPaymentOutboxRequest(dto)).thenReturn(mappedRequest);
@@ -94,12 +97,14 @@ class PaymentOutboxServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         PaymentOutboxRequest mappedRequest = PaymentOutboxRequest.builder()
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS.name())
                 .build();
 
         when(paymentOutboxRequestMapper.toPaymentOutboxRequest(dto)).thenReturn(mappedRequest);
@@ -124,12 +129,14 @@ class PaymentOutboxServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         PaymentOutboxRequest mappedRequest = PaymentOutboxRequest.builder()
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS.name())
                 .build();
 
         when(paymentOutboxRequestMapper.toPaymentOutboxRequest(dto)).thenReturn(mappedRequest);
@@ -149,12 +156,14 @@ class PaymentOutboxServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS)
                 .build();
 
         PaymentOutboxRequest mappedRequest = PaymentOutboxRequest.builder()
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.SUCCESS.name())
                 .build();
 
         when(paymentOutboxRequestMapper.toPaymentOutboxRequest(dto)).thenReturn(mappedRequest);
@@ -170,8 +179,8 @@ class PaymentOutboxServiceTest {
     @DisplayName("getBatchOfPendingPaymentRequests should return list of PENDING requests with correct pagination")
     void getBatchOfPendingPaymentRequests_shouldReturnPendingRequestsWithCorrectPagination() {
         List<PaymentOutboxRequest> expectedRequests = List.of(
-                PaymentOutboxRequest.builder().paymentId("1").status(PaymentOutboxStatus.PENDING).build(),
-                PaymentOutboxRequest.builder().paymentId("2").status(PaymentOutboxStatus.PENDING).build()
+                PaymentOutboxRequest.builder().paymentId("1").paymentStatus(PaymentStatus.SUCCESS.name()).status(PaymentOutboxStatus.PENDING).build(),
+                PaymentOutboxRequest.builder().paymentId("2").paymentStatus(PaymentStatus.SUCCESS.name()).status(PaymentOutboxStatus.PENDING).build()
         );
 
         when(paymentOutboxRepository.findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class)))
@@ -251,6 +260,7 @@ class PaymentOutboxServiceTest {
                 .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
+                .paymentStatus(PaymentStatus.FAILURE.name())
                 .status(PaymentOutboxStatus.PENDING)
                 .timestamp(Instant.now())
                 .build();
