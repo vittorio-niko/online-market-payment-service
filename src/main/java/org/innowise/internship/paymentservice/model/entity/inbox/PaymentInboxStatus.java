@@ -1,7 +1,7 @@
 package org.innowise.internship.paymentservice.model.entity.inbox;
 
 public enum PaymentInboxStatus {
-    PROCESSING,
-    COMPLETED,
+    NEW,
+    PROCESSED,
     FAILED
 }
