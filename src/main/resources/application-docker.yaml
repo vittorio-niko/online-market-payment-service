@@ -50,9 +50,14 @@ app:
     topics:
       payment-requests: "payment-requests-topic"
       payment-results: "payment-results-topic"
+    inbox:
+      processing-delay: 1000
+      batch-size: 100
+      days-to-store-records: 3
     outbox:
       publish-delay: 1000
       batch-size: 100
+      days-to-store-records: 3
       retries: 5
 
 server:
