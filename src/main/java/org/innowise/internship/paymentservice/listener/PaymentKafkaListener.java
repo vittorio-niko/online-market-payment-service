@@ -15,26 +15,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentKafkaListener {
     private final PaymentInboxService inboxService;
-    private final PaymentOrchestratorService paymentOrchestratorService;
-
-    private final BankClient client;
 
     @KafkaListener(
             topics = "${app.kafka.topics.payment-requests}",
             groupId = "payment-group"
     )
     public void listen(@Valid CreatePaymentInboxRequestDto dto) {
-        if (!inboxService.reserve(dto)) {
-            return;
-        }
-
-        // mock for external api
-        BankPaymentStatus status = client.processPayment(dto.getUserId(), dto.getPaymentAmount());
-
-        if (status == BankPaymentStatus.SUCCESS) {
-            paymentOrchestratorService.finalizePayment(dto, PaymentStatus.SUCCESS);
-        } else if (status == BankPaymentStatus.FAILED) {
-            paymentOrchestratorService.finalizePayment(dto, PaymentStatus.FAILURE);
-        }
+        inboxService.reserve(dto);
     }
 }

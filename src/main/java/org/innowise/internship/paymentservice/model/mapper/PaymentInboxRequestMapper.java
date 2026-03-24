@@ -19,6 +19,6 @@ public interface PaymentInboxRequestMapper {
 
     @Mapping(target = "status", ignore = true)
     CreatePaymentLogRequestDto toCreatePaymentLogRequestDto(
-            @NonNull CreatePaymentInboxRequestDto dto
+            @NonNull PaymentInboxRequest request
     );
 }
