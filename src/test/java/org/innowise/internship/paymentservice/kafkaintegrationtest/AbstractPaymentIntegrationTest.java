@@ -6,7 +6,11 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.innowise.internship.paymentservice.model.entity.inbox.PaymentInboxRequest;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
+import org.innowise.internship.paymentservice.repository.PaymentInboxRepository;
+import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
+import org.innowise.internship.paymentservice.repository.PaymentOutboxRepository;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -38,6 +42,20 @@ public abstract class AbstractPaymentIntegrationTest {
     static final KafkaContainer kafka = new KafkaContainer(
             DockerImageName.parse("confluentinc/cp-kafka:7.3.0")
     );
+
+    @Autowired
+    private PaymentInboxRepository inboxRepository;
+    @Autowired
+    private PaymentLogsRepository paymentLogsRepository;
+    @Autowired
+    private PaymentOutboxRepository outboxRepository;
+
+    @BeforeEach
+    void cleanDatabase() {
+        inboxRepository.deleteAll();
+        paymentLogsRepository.deleteAll();
+        outboxRepository.deleteAll();
+    }
 
     @Autowired
     protected MongoTemplate mongoTemplate;
@@ -95,11 +113,5 @@ public abstract class AbstractPaymentIntegrationTest {
                 throw new RuntimeException("Failed to create Kafka topics", e);
             }
         }
-    }
-
-    protected void clearMongoCollections() {
-        mongoTemplate.remove(new Query(), PaymentInboxRequest.class);
-        mongoTemplate.remove(new Query(), PaymentLog.class);
-        mongoTemplate.remove(new Query(), PaymentOutboxRequest.class);
     }
 }

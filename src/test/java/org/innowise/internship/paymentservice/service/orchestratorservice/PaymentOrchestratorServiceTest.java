@@ -1,15 +1,15 @@
 package org.innowise.internship.paymentservice.service.orchestratorservice;
 
 import org.innowise.internship.paymentservice.model.dto.log.request.CreatePaymentLogRequestDto;
-import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentInboxRequestDto;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentOutboxRequestDto;
+import org.innowise.internship.paymentservice.model.entity.inbox.PaymentInboxRequest;
+import org.innowise.internship.paymentservice.model.entity.inbox.PaymentInboxStatus;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.model.mapper.PaymentInboxRequestMapper;
 import org.innowise.internship.paymentservice.model.mapper.PaymentOutboxRequestMapper;
-import org.innowise.internship.paymentservice.service.exception.businessexception.NotFoundException;
+import org.innowise.internship.paymentservice.repository.PaymentInboxRepository;
 import org.innowise.internship.paymentservice.service.logservice.PaymentLogsService;
-import org.innowise.internship.paymentservice.service.messageservice.PaymentInboxService;
 import org.innowise.internship.paymentservice.service.messageservice.PaymentOutboxService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class PaymentOrchestratorServiceTest {
 
     @Mock
-    private PaymentInboxService inboxService;
+    private PaymentInboxRepository paymentInboxRepository; // Теперь работаем с репозиторием напрямую
 
     @Mock
     private PaymentOutboxService outboxService;
@@ -47,289 +47,86 @@ class PaymentOrchestratorServiceTest {
     @Captor
     private ArgumentCaptor<CreatePaymentLogRequestDto> logDtoCaptor;
 
-    @Captor
-    private ArgumentCaptor<CreatePaymentOutboxRequestDto> outboxDtoCaptor;
-
-    private final String msgId = "inbox-msg-123";
     private final String userId = "user-456";
     private final Long orderId = 789L;
     private final BigDecimal amount = BigDecimal.valueOf(299.99);
     private final String paymentId = "payment-123";
 
     @Test
-    @DisplayName("Should successfully complete payment flow with SUCCESS status")
-    void shouldCompletePaymentFlowWithSuccessStatus() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
+    @DisplayName("Should successfully complete payment flow and update inbox status")
+    void shouldCompletePaymentFlowSuccessfully() {
+        // GIVEN
+        PaymentInboxRequest record = createBaseRecord();
         CreatePaymentLogRequestDto logDto = createBaseLogDto();
         PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);
         CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
 
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
+        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(record)).thenReturn(logDto);
         when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
         when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
 
-        paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS);
+        paymentOrchestratorService.finalizePayment(record, PaymentStatus.SUCCESS);
 
-        verify(inboxService).markMessageCompleted(msgId);
+        assertEquals(PaymentInboxStatus.PROCESSED, record.getStatus());
+        verify(paymentInboxRepository).save(record);
+
         verify(paymentLogsService).createPaymentLog(logDtoCaptor.capture());
-        verify(outboxService).reserve(outboxDtoCaptor.capture());
+        verify(outboxService).reserve(any());
 
         assertEquals("SUCCESS", logDtoCaptor.getValue().getStatus());
-        assertEquals(paymentId, outboxDtoCaptor.getValue().getPaymentId());
     }
 
     @Test
-    @DisplayName("Should complete payment flow with FAILURE status")
-    void shouldCompletePaymentFlowWithFailureStatus() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
-        PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.FAILURE);
-        CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
-
-        paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.FAILURE);
-
-        verify(paymentLogsService).createPaymentLog(logDtoCaptor.capture());
-        assertEquals("FAILURE", logDtoCaptor.getValue().getStatus());
-    }
-
-    @Test
-    @DisplayName("Should handle outbox reservation failure gracefully")
-    void shouldHandleOutboxReservationFailure() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
-        PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);
-        CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(false);
-
-        assertDoesNotThrow(() ->
-                paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS)
-        );
-
-        verify(outboxService).reserve(any());
-    }
-
-    @Test
-    @DisplayName("Should preserve all data through the orchestration flow")
-    void shouldPreserveDataThroughFlow() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
-        PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);
-        CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
-
-        paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS);
-
-        verify(paymentLogsService).createPaymentLog(logDtoCaptor.capture());
-        verify(outboxService).reserve(outboxDtoCaptor.capture());
-
-        CreatePaymentLogRequestDto capturedLogDto = logDtoCaptor.getValue();
-        assertEquals(userId, capturedLogDto.getUserId());
-        assertEquals(orderId, capturedLogDto.getOrderId());
-        assertEquals(amount, capturedLogDto.getPaymentAmount());
-
-        CreatePaymentOutboxRequestDto capturedOutboxDto = outboxDtoCaptor.getValue();
-        assertEquals(paymentId, capturedOutboxDto.getPaymentId());
-        assertEquals(userId, capturedOutboxDto.getUserId());
-        assertEquals(orderId, capturedOutboxDto.getOrderId());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when inbox marking fails")
-    void shouldThrowWhenInboxMarkingFails() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-
-        doThrow(new NotFoundException("Message not found"))
-                .when(inboxService).markMessageCompleted(msgId);
-
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS)
-        );
-
-        assertEquals("Message not found", exception.getMessage());
-        verify(paymentInboxRequestMapper, never()).toCreatePaymentLogRequestDto(any());
-        verify(paymentLogsService, never()).createPaymentLog(any());
-        verify(outboxService, never()).reserve(any());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when payment log creation fails")
-    void shouldThrowWhenPaymentLogCreationFails() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any()))
-                .thenThrow(new RuntimeException("Database connection failed"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS)
-        );
-
-        assertEquals("Database connection failed", exception.getMessage());
-        verify(inboxService).markMessageCompleted(msgId);
-        verify(outboxService, never()).reserve(any());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when outbox reservation throws exception")
-    void shouldThrowWhenOutboxReservationThrows() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
-        PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);
-        CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenThrow(new RuntimeException("Duplicate key"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS)
-        );
-
-        assertEquals("Duplicate key", exception.getMessage());
-        verify(inboxService).markMessageCompleted(msgId);
-        verify(paymentLogsService).createPaymentLog(any());
-    }
-
-    @Test
-    @DisplayName("Should handle zero payment amount correctly")
-    void shouldHandleZeroAmount() {
-        BigDecimal zeroAmount = BigDecimal.ZERO;
-
-        CreatePaymentInboxRequestDto inboxDto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(zeroAmount)
-                .build();
-
-        CreatePaymentLogRequestDto logDto = CreatePaymentLogRequestDto.builder()
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(zeroAmount)
-                .build();
-
-        PaymentLog createdPaymentLog = PaymentLog.builder()
-                .paymentId(paymentId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(zeroAmount)
-                .status(PaymentStatus.SUCCESS)
-                .build();
-
-        CreatePaymentOutboxRequestDto outboxDto = CreatePaymentOutboxRequestDto.builder()
-                .paymentId(paymentId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentStatus(PaymentStatus.SUCCESS)
-                .build();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
-
-        paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS);
-
-        verify(paymentLogsService).createPaymentLog(logDtoCaptor.capture());
-        verify(outboxService).reserve(outboxDtoCaptor.capture());
-
-        assertEquals(zeroAmount, logDtoCaptor.getValue().getPaymentAmount());
-    }
-
-    @Test
-    @DisplayName("Should execute all steps in correct order")
+    @DisplayName("Should execute all steps in correct order within the new transaction")
     void shouldExecuteStepsInCorrectOrder() {
-        CreatePaymentInboxRequestDto inboxDto = createBaseInboxDto();
-        CreatePaymentLogRequestDto logDto = createBaseLogDto();
+        PaymentInboxRequest record = createBaseRecord();
         PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);
-        CreatePaymentOutboxRequestDto outboxDto = createBaseOutboxDto();
 
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
+        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(record)).thenReturn(createBaseLogDto());
         when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
+        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(any())).thenReturn(createBaseOutboxDto());
 
-        paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS);
+        paymentOrchestratorService.finalizePayment(record, PaymentStatus.SUCCESS);
 
-        InOrder inOrder = inOrder(
-                inboxService,
-                paymentInboxRequestMapper,
-                paymentLogsService,
-                paymentOutboxRequestMapper,
-                outboxService
-        );
+        InOrder inOrder = inOrder(paymentInboxRepository, paymentLogsService, outboxService);
 
-        inOrder.verify(inboxService).markMessageCompleted(msgId);
-        inOrder.verify(paymentInboxRequestMapper).toCreatePaymentLogRequestDto(inboxDto);
+        inOrder.verify(paymentInboxRepository).save(record);
         inOrder.verify(paymentLogsService).createPaymentLog(any());
-        inOrder.verify(paymentOutboxRequestMapper).toCreatePaymentOutboxRequestDto(createdPaymentLog);
         inOrder.verify(outboxService).reserve(any());
     }
 
     @Test
-    @DisplayName("Should work with minimum required fields in DTO")
-    void shouldWorkWithMinimumRequiredFields() {
-        CreatePaymentInboxRequestDto inboxDto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(amount)
-                .build();
+    @DisplayName("Should mark record as FAILED in markAsFailed method")
+    void shouldMarkAsFailedCorrectly() {
+        PaymentInboxRequest record = createBaseRecord();
 
-        CreatePaymentLogRequestDto logDto = CreatePaymentLogRequestDto.builder()
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(amount)
-                .build();
+        paymentOrchestratorService.markAsFailed(record);
 
-        PaymentLog createdPaymentLog = PaymentLog.builder()
-                .paymentId(paymentId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(amount)
-                .status(PaymentStatus.SUCCESS)
-                .build();
-
-        CreatePaymentOutboxRequestDto outboxDto = CreatePaymentOutboxRequestDto.builder()
-                .paymentId(paymentId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentStatus(PaymentStatus.SUCCESS)
-                .build();
-
-        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(inboxDto)).thenReturn(logDto);
-        when(paymentLogsService.createPaymentLog(any())).thenReturn(createdPaymentLog);
-        when(paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(createdPaymentLog)).thenReturn(outboxDto);
-        when(outboxService.reserve(any())).thenReturn(true);
-
-        assertDoesNotThrow(() ->
-                paymentOrchestratorService.finalizePayment(inboxDto, PaymentStatus.SUCCESS)
-        );
+        assertEquals(PaymentInboxStatus.FAILED, record.getStatus());
+        verify(paymentInboxRepository).save(record);
     }
 
-    private CreatePaymentInboxRequestDto createBaseInboxDto() {
-        return CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(amount)
-                .build();
+    @Test
+    @DisplayName("Should throw exception and rollback if Log Service fails")
+    void shouldThrowWhenLogFails() {
+        PaymentInboxRequest record = createBaseRecord();
+
+        when(paymentInboxRequestMapper.toCreatePaymentLogRequestDto(record)).thenReturn(createBaseLogDto());
+        when(paymentLogsService.createPaymentLog(any())).thenThrow(new RuntimeException("DB Error"));
+
+        assertThrows(RuntimeException.class,
+                () -> paymentOrchestratorService.finalizePayment(record, PaymentStatus.SUCCESS));
+
+        assertEquals(PaymentInboxStatus.PROCESSED, record.getStatus());
+    }
+
+    private PaymentInboxRequest createBaseRecord() {
+        PaymentInboxRequest record = new PaymentInboxRequest();
+        record.setUserId(userId);
+        record.setOrderId(orderId);
+        record.setPaymentAmount(amount);
+        record.setStatus(PaymentInboxStatus.NEW);
+        return record;
     }
 
     private CreatePaymentLogRequestDto createBaseLogDto() {

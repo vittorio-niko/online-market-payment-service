@@ -58,7 +58,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
 
     @BeforeEach
     void setUp() {
-        clearMongoCollections();
+        cleanDatabase();
         setupResultConsumer();
     }
 
@@ -94,7 +94,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
                 .msgId(msgId)
                 .orderId(orderId)
                 .userId("user-1")
-                .status(PaymentInboxStatus.COMPLETED)
+                .status(PaymentInboxStatus.PROCESSED)
                 .paymentAmount(BigDecimal.TEN)
                 .timestamp(java.time.Instant.now())
                 .build());
@@ -143,7 +143,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
                 .untilAsserted(() -> {
                     PaymentInboxRequest inboxRequest = inboxRepository.findByMsgId(msgId).orElse(null);
                     assertThat(inboxRequest).isNotNull();
-                    assertThat(inboxRequest.getStatus()).isEqualTo(PaymentInboxStatus.COMPLETED);
+                    assertThat(inboxRequest.getStatus()).isEqualTo(PaymentInboxStatus.PROCESSED);
                 });
 
         //  payment log should be created
@@ -206,11 +206,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
                 .atMost(Duration.ofSeconds(5))
                 .untilAsserted(() -> assertThat(paymentLogsRepository.findByOrderId(101L)).hasSize(1));
 
-        // only one inbox request
-        List<PaymentInboxRequest> inboxRequests = inboxRepository.findAll();
-        for (var request : inboxRequests) {
-            System.err.println(request.toString());
-        }
+        List<PaymentInboxRequest> inboxRequests = inboxRepository.findAllByMsgId(msgId);
         assertThat(inboxRequests).hasSize(1);
     }
 
