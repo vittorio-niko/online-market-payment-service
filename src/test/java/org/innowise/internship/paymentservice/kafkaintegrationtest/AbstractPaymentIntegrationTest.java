@@ -40,7 +40,7 @@ public abstract class AbstractPaymentIntegrationTest {
 
     @Container
     static final KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.3.0")
+            DockerImageName.parse("confluentinc/cp-kafka:7.6.0")
     );
 
     @Autowired
