@@ -4,6 +4,7 @@ import com.mongodb.DuplicateKeyException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentOutboxRequestDto;
+import org.innowise.internship.paymentservice.model.entity.inbox.PaymentInboxStatus;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
 import org.innowise.internship.paymentservice.model.mapper.PaymentOutboxRequestMapper;
@@ -13,8 +14,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -26,6 +29,10 @@ public class PaymentOutboxService {
     @Value("${app.kafka.outbox.batch-size}")
     private Integer batchSize;
 
+    @Value("${app.kafka.outbox.days-to-store-records}")
+    private Integer daysToKeep;
+
+    @Transactional
     public boolean reserve(@NonNull CreatePaymentOutboxRequestDto dto) {
         try {
             PaymentOutboxRequest request = paymentOutboxRequestMapper.toPaymentOutboxRequest(dto);
@@ -38,6 +45,7 @@ public class PaymentOutboxService {
         }
     }
 
+    @Transactional
     public List<PaymentOutboxRequest> getBatchOfPendingPaymentRequests() {
         Pageable limit = PageRequest.of(0, batchSize,
                 Sort.by("timestamp").ascending());
@@ -47,5 +55,15 @@ public class PaymentOutboxService {
 
     public void saveMessage(PaymentOutboxRequest message) {
         paymentOutboxRepository.save(message);
+    }
+
+    @Transactional
+    public int cleanupSentRecords() {
+        Instant threshold = Instant.now().minus(daysToKeep, ChronoUnit.DAYS);
+
+        return paymentOutboxRepository.deleteByStatusAndTimestampBefore(
+                PaymentOutboxStatus.SENT,
+                threshold
+        );
     }
 }
