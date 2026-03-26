@@ -51,11 +51,11 @@ app:
       payment-requests: "payment-requests-topic"
       payment-results: "payment-results-topic"
     inbox:
-      processing-delay: 1000
+      processing-delay: 100
       batch-size: 100
       days-to-store-records: 3
     outbox:
-      publish-delay: 1000
+      publish-delay: 100
       batch-size: 100
       days-to-store-records: 3
       retries: 5
