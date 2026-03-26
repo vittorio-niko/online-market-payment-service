@@ -9,6 +9,7 @@ import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.service.messageservice.PaymentInboxService;
 import org.innowise.internship.paymentservice.service.orchestratorservice.PaymentOrchestratorService;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,7 +21,7 @@ public class PaymentKafkaListener {
             topics = "${app.kafka.topics.payment-requests}",
             groupId = "payment-group"
     )
-    public void listen(@Valid CreatePaymentInboxRequestDto dto) {
+    public void listen(@Payload @Valid CreatePaymentInboxRequestDto dto) {
         inboxService.reserve(dto);
     }
 }

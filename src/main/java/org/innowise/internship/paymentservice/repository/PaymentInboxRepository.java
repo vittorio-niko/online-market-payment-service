@@ -15,8 +15,8 @@ import java.util.Optional;
 public interface PaymentInboxRepository
         extends MongoRepository<PaymentInboxRequest, String> {
 
-    Optional<PaymentInboxRequest> findByMsgId(@NonNull String msgId);
-    List<PaymentInboxRequest> findAllByMsgId(@NonNull String msgId);
+    Optional<PaymentInboxRequest> findByPaymentId(@NonNull String msgId);
+    List<PaymentInboxRequest> findAllByPaymentId(@NonNull String msgId);
     List<PaymentInboxRequest> findAllByStatus(@NonNull PaymentInboxStatus status, Pageable pageable);
 
     int deleteByStatusAndTimestampBefore(PaymentInboxStatus status, Instant threshold);

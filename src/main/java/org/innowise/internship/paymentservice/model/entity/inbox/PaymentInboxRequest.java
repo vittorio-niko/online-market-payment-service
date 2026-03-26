@@ -19,8 +19,8 @@ public class PaymentInboxRequest {
     @Id
     private String id;
 
-    @Field("msg_id")
-    private String msgId;
+    @Field("payment_id")
+    private String paymentId;
 
     @Field("order_id")
     private Long orderId;

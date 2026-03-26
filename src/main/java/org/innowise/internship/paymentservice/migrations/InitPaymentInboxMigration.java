@@ -41,9 +41,9 @@ public class InitPaymentInboxMigration {
 
     private MongoJsonSchema setupSchema() {
         return MongoJsonSchema.builder()
-                .required("msg_id", "order_id", "user_id", "timestamp", "status", "payment_amount")
+                .required("payment_id", "order_id", "user_id", "timestamp", "status", "payment_amount")
                 .properties(
-                        JsonSchemaProperty.string("msg_id"),
+                        JsonSchemaProperty.string("payment_id"),
                         JsonSchemaProperty.int64("order_id"),
                         JsonSchemaProperty.string("user_id"),
                         JsonSchemaProperty.date("timestamp"),
@@ -57,8 +57,8 @@ public class InitPaymentInboxMigration {
 
         indexOps.ensureIndex(
                 new Index()
-                        .named("idx_inbox_payment_requests_msg_id")
-                        .on("msg_id", Sort.Direction.ASC)
+                        .named("idx_inbox_payment_requests_payment_id")
+                        .on("payment_id", Sort.Direction.ASC)
                         .unique()
         );
         indexOps.ensureIndex(

@@ -1,5 +1,6 @@
 package org.innowise.internship.paymentservice.service.messageservice;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.bankclient.BankClient;
 import org.innowise.internship.paymentservice.bankclient.BankPaymentStatus;
@@ -15,7 +16,7 @@ public class PaymentInboxProcessor {
 
     private final BankClient client;
 
-    public void processInboxRecord(PaymentInboxRequest record) {
+    public void processInboxRecord(@NonNull PaymentInboxRequest record) {
         BankPaymentStatus status;
         try {
             status = client.processPayment(

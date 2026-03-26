@@ -47,6 +47,7 @@ class PaymentLogsServiceTest {
     @DisplayName("createPaymentLog should create and save log")
     void createPaymentLog_shouldCreateAndSaveLog() {
         CreatePaymentLogRequestDto dto = CreatePaymentLogRequestDto.builder()
+                .paymentId("pay-ment-id")
                 .userId(userId)
                 .orderId(orderId)
                 .paymentAmount(amount)
@@ -54,15 +55,15 @@ class PaymentLogsServiceTest {
                 .build();
 
         PaymentLog mappedLog = PaymentLog.builder()
+                .paymentId("pay-ment-id")
                 .userId(userId)
                 .orderId(orderId)
                 .paymentAmount(amount)
                 .status(status)
                 .build();
 
-        String paymentId = "generated-uuid";
         PaymentLog savedLog = PaymentLog.builder()
-                .paymentId(paymentId)
+                .paymentId("pay-ment-id")
                 .userId(userId)
                 .orderId(orderId)
                 .paymentAmount(amount)
@@ -90,33 +91,6 @@ class PaymentLogsServiceTest {
         assertEquals(status, capturedLog.getStatus());
         assertNotNull(capturedLog.getPaymentId());
         assertNotNull(capturedLog.getTimestamp());
-    }
-
-    @Test
-    @DisplayName("createPaymentLog should generate unique id for payments")
-    void createPaymentLog_shouldGenerateUniquePaymentId() {
-        CreatePaymentLogRequestDto dto = CreatePaymentLogRequestDto.builder()
-                .userId(userId)
-                .orderId(orderId)
-                .paymentAmount(amount)
-                .status(status.name())
-                .build();
-
-        when(paymentLogMapper.toPaymentLog(dto)).thenAnswer(invocation ->
-                PaymentLog.builder()
-                        .userId(userId)
-                        .orderId(orderId)
-                        .paymentAmount(amount)
-                        .status(status)
-                        .build()
-        );
-        when(paymentLogsRepository.save(any(PaymentLog.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        PaymentLog result1 = paymentLogsService.createPaymentLog(dto);
-        PaymentLog result2 = paymentLogsService.createPaymentLog(dto);
-
-        assertNotEquals(result1.getPaymentId(), result2.getPaymentId());
     }
 
     @Test

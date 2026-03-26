@@ -22,7 +22,6 @@ public class PaymentLogsService {
     public PaymentLog createPaymentLog(@NonNull CreatePaymentLogRequestDto dto) {
         PaymentLog log = paymentLogMapper.toPaymentLog(dto);
         log.setTimestamp(Instant.now());
-        log.setPaymentId(UUID.randomUUID().toString());
 
         return paymentLogsRepository.save(log);
     }

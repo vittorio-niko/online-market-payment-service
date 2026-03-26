@@ -55,7 +55,6 @@ class PaymentOrchestratorServiceTest {
     @Test
     @DisplayName("Should successfully complete payment flow and update inbox status")
     void shouldCompletePaymentFlowSuccessfully() {
-        // GIVEN
         PaymentInboxRequest record = createBaseRecord();
         CreatePaymentLogRequestDto logDto = createBaseLogDto();
         PaymentLog createdPaymentLog = createPaymentLog(PaymentStatus.SUCCESS);

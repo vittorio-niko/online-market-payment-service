@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Builder
 public class CreatePaymentInboxRequestDto {
     @NotBlank
-    private String msgId;
+    private String paymentId;
 
     @NotNull
     private Long orderId;

@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class CreatePaymentLogRequestDto {
+    @NotBlank
+    private String paymentId;
+
     @NotNull
     private Long orderId;
 

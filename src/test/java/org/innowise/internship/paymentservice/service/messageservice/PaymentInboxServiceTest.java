@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,7 +42,7 @@ class PaymentInboxServiceTest {
     @Captor
     private ArgumentCaptor<PaymentInboxRequest> requestCaptor;
 
-    private final String msgId = "message-123";
+    private final String paymentId = UUID.randomUUID().toString();
     private final String userId = "user-456";
     private final Long orderId = 789L;
 
@@ -54,13 +55,13 @@ class PaymentInboxServiceTest {
     @DisplayName("reserve should successfully insert new request with NEW status")
     void reserve_shouldInsertNewRequestAndReturnTrue() {
         CreatePaymentInboxRequestDto dto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
+                .paymentId(paymentId)
                 .userId(userId)
                 .orderId(orderId)
                 .build();
 
         PaymentInboxRequest mappedRequest = new PaymentInboxRequest();
-        mappedRequest.setMsgId(msgId);
+        mappedRequest.setPaymentId(paymentId);
 
         when(paymentInboxRequestMapper.toPaymentInboxRequest(dto)).thenReturn(mappedRequest);
 
@@ -72,7 +73,7 @@ class PaymentInboxServiceTest {
         PaymentInboxRequest saved = requestCaptor.getValue();
         assertEquals(PaymentInboxStatus.NEW, saved.getStatus());
         assertNotNull(saved.getTimestamp());
-        assertEquals(msgId, saved.getMsgId());
+        assertEquals(paymentId, saved.getPaymentId());
     }
 
     @Test
