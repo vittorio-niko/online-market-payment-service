@@ -45,8 +45,14 @@ mongock:
 app:
   kafka:
     topics:
-      payment-requests: "payment-requests-topic"
-      payment-results: "payment-results-topic"
+      payment-requests:
+        name: "payment-requests-topic"
+        partitions: 3
+        replicas: 3
+      payment-results:
+        name: "payment-results-topic"
+        partitions: 3
+        replicas: 3
     inbox:
       processing-delay: 100
       batch-size: 100

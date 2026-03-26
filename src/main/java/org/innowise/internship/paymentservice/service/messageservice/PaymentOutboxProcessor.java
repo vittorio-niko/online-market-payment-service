@@ -18,7 +18,7 @@ public class PaymentOutboxProcessor {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final PaymentOutboxRequestMapper mapper;
 
-    @Value("${app.kafka.topics.payment-results}")
+    @Value("${app.kafka.topics.payment-results.name}")
     private String topic;
 
     @Value("${app.kafka.outbox.retries}")

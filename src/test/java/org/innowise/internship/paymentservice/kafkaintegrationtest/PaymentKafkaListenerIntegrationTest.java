@@ -48,10 +48,10 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
     @Autowired
     private PaymentLogsRepository paymentLogsRepository;
 
-    @Value("${app.kafka.topics.payment-requests}")
+    @Value("${app.kafka.topics.payment-requests.name}")
     private String paymentRequestsTopic;
 
-    @Value("${app.kafka.topics.payment-results}")
+    @Value("${app.kafka.topics.payment-results.name}")
     private String paymentResultsTopic;
 
     private Consumer<String, PaymentResultEventDto> resultConsumer;
@@ -120,8 +120,12 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
         kafkaTemplate.send(paymentRequestsTopic, paymentId, dto).get();
 
         // extra log has not been created
-        Thread.sleep(2000);
-        assertThat(paymentLogsRepository.findByOrderId(orderId)).hasSize(1);
+        await()
+                .during(Duration.ofSeconds(2))
+                .atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> {
+                    assertThat(paymentLogsRepository.findByOrderId(orderId)).hasSize(1);
+                });
     }
 
     @Test

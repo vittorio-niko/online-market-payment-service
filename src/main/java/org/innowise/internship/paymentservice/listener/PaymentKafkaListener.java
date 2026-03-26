@@ -18,7 +18,7 @@ public class PaymentKafkaListener {
     private final PaymentInboxService inboxService;
 
     @KafkaListener(
-            topics = "${app.kafka.topics.payment-requests}",
+            topics = "${app.kafka.topics.payment-requests.name}",
             groupId = "payment-group"
     )
     public void listen(@Payload @Valid CreatePaymentInboxRequestDto dto) {
