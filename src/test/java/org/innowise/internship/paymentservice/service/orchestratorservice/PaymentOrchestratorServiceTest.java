@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class PaymentOrchestratorServiceTest {
 
     @Mock
-    private PaymentInboxRepository paymentInboxRepository; // Теперь работаем с репозиторием напрямую
+    private PaymentInboxRepository paymentInboxRepository;
 
     @Mock
     private PaymentOutboxService outboxService;

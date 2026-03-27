@@ -15,9 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -29,6 +27,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentInboxServiceTest {
+
+    @Mock
+    private MongoTemplate mongoTemplate;
 
     @Mock
     private PaymentInboxRepository paymentInboxRepository;
@@ -96,16 +97,13 @@ class PaymentInboxServiceTest {
         PaymentInboxRequest record = new PaymentInboxRequest();
         record.setStatus(PaymentInboxStatus.NEW);
 
-        Pageable expectedPageable = PageRequest.of(0, 10, Sort.by("timestamp").ascending());
-
-        when(paymentInboxRepository.findAllByStatus(eq(PaymentInboxStatus.NEW), any(Pageable.class)))
-                .thenReturn(List.of(record));
-
+        when(mongoTemplate.findAndModify(any(), any(), any(), eq(PaymentInboxRequest.class)))
+                .thenReturn(record)
+                .thenReturn(null);
         List<PaymentInboxRequest> result = paymentInboxService.getInboxRecordsBatchForProcessing();
 
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
-        verify(paymentInboxRepository).findAllByStatus(eq(PaymentInboxStatus.NEW), eq(expectedPageable));
     }
 
     @Test

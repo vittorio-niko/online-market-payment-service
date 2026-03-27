@@ -12,11 +12,17 @@ import org.innowise.internship.paymentservice.repository.PaymentInboxRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,6 +30,8 @@ import java.util.List;
 public class PaymentInboxService {
     private final PaymentInboxRepository paymentInboxRepository;
     private final PaymentInboxRequestMapper paymentInboxRequestMapper;
+
+    private final MongoTemplate mongoTemplate;
 
     @Value("${app.kafka.inbox.batch-size}")
     private Integer batchSize;
@@ -44,10 +52,29 @@ public class PaymentInboxService {
         }
     }
 
-    @Transactional
     public List<PaymentInboxRequest> getInboxRecordsBatchForProcessing() {
-        Pageable batch = PageRequest.of(0, batchSize, Sort.by("timestamp").ascending());
-        return paymentInboxRepository.findAllByStatus(PaymentInboxStatus.NEW, batch);
+        List<PaymentInboxRequest> grabbedRecords = new ArrayList<>();
+
+        for (int i = 0; i < batchSize; i++) {
+            Query query = new Query(Criteria.where("status").is(PaymentInboxStatus.NEW))
+                    .with(Sort.by(Sort.Direction.ASC, "timestamp"));
+
+            Update update = new Update().set("status", PaymentInboxStatus.PROCESSING);
+
+            PaymentInboxRequest record = mongoTemplate.findAndModify(
+                    query,
+                    update,
+                    new FindAndModifyOptions().returnNew(true),
+                    PaymentInboxRequest.class
+            );
+
+            if (record != null) {
+                grabbedRecords.add(record);
+            } else {
+                break;
+            }
+        }
+        return grabbedRecords;
     }
 
     @Transactional

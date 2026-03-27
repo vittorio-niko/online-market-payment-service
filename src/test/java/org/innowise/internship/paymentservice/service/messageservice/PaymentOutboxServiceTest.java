@@ -16,8 +16,10 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -32,6 +34,9 @@ import static org.mockito.Mockito.*;
 class PaymentOutboxServiceTest {
 
     @Mock
+    private MongoTemplate mongoTemplate;
+
+    @Mock
     private PaymentOutboxRepository paymentOutboxRepository;
 
     @Mock
@@ -42,9 +47,6 @@ class PaymentOutboxServiceTest {
 
     @Captor
     private ArgumentCaptor<PaymentOutboxRequest> requestCaptor;
-
-    @Captor
-    private ArgumentCaptor<Pageable> pageableCaptor;
 
     private final String paymentId = "outbox-payment-123";
     private final String userId = "user-456";
@@ -176,81 +178,91 @@ class PaymentOutboxServiceTest {
     }
 
     @Test
-    @DisplayName("getBatchOfPendingPaymentRequests should return list of PENDING requests with correct pagination")
-    void getBatchOfPendingPaymentRequests_shouldReturnPendingRequestsWithCorrectPagination() {
-        List<PaymentOutboxRequest> expectedRequests = List.of(
-                PaymentOutboxRequest.builder().paymentId("1").paymentStatus(PaymentStatus.SUCCESS.name()).status(PaymentOutboxStatus.PENDING).build(),
-                PaymentOutboxRequest.builder().paymentId("2").paymentStatus(PaymentStatus.SUCCESS.name()).status(PaymentOutboxStatus.PENDING).build()
-        );
+    @DisplayName("getBatchOfPendingPaymentRequests should return list of PENDING requests and use correct query")
+    void getBatchOfPendingPaymentRequests_shouldReturnPendingRequestsWithCorrectQuery() {
+        var expected1 = PaymentOutboxRequest.builder().paymentId("1").status(PaymentOutboxStatus.PROCESSING).build();
+        var expected2 = PaymentOutboxRequest.builder().paymentId("2").status(PaymentOutboxStatus.PROCESSING).build();
 
-        when(paymentOutboxRepository.findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class)))
-                .thenReturn(expectedRequests);
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+
+        when(mongoTemplate.findAndModify(queryCaptor.capture(), any(Update.class),
+                any(FindAndModifyOptions.class), eq(PaymentOutboxRequest.class)))
+                .thenReturn(expected1)
+                .thenReturn(expected2)
+                .thenReturn(null);
 
         List<PaymentOutboxRequest> result = paymentOutboxService.getBatchOfPendingPaymentRequests();
 
-        assertEquals(expectedRequests, result);
-        verify(paymentOutboxRepository).findAllByStatus(
-                eq(PaymentOutboxStatus.PENDING),
-                pageableCaptor.capture()
-        );
+        assertEquals(2, result.size());
+        assertEquals("1", result.get(0).getPaymentId());
+        assertEquals("2", result.get(1).getPaymentId());
 
-        Pageable capturedPageable = pageableCaptor.getValue();
-        assertEquals(0, capturedPageable.getPageNumber());
-        assertEquals(batchSize, capturedPageable.getPageSize());
+        List<Query> capturedQueries = queryCaptor.getAllValues();
+        Query firstQuery = capturedQueries.getFirst();
 
-        Sort.Order order = capturedPageable.getSort().getOrderFor("timestamp");
-        assertNotNull(order);
-        assertEquals(Sort.Direction.ASC, order.getDirection());
+        assertEquals(PaymentOutboxStatus.PENDING, firstQuery.getQueryObject().get("status"));
+
+        var sortObject = firstQuery.getSortObject();
+        assertEquals(1, sortObject.get("timestamp"));
+        verify(mongoTemplate, times(3)).findAndModify(any(), any(), any(), eq(PaymentOutboxRequest.class));
     }
 
     @Test
     @DisplayName("getBatchOfPendingPaymentRequests should return empty list when no PENDING requests")
     void getBatchOfPendingPaymentRequests_shouldReturnEmptyList_whenNoPendingRequests() {
-        when(paymentOutboxRepository.findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class)))
-                .thenReturn(List.of());
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class),
+                any(FindAndModifyOptions.class), eq(PaymentOutboxRequest.class)))
+                .thenReturn(null);
 
         List<PaymentOutboxRequest> result = paymentOutboxService.getBatchOfPendingPaymentRequests();
 
         assertTrue(result.isEmpty());
-        verify(paymentOutboxRepository).findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class));
     }
 
     @Test
     @DisplayName("getBatchOfPendingPaymentRequests should respect configured batch size")
     void getBatchOfPendingPaymentRequests_shouldRespectConfiguredBatchSize() {
-        ReflectionTestUtils.setField(paymentOutboxService, "batchSize", 5);
+        int customBatchSize = 5;
+        ReflectionTestUtils.setField(paymentOutboxService, "batchSize", customBatchSize);
 
-        when(paymentOutboxRepository.findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class)))
-                .thenReturn(List.of());
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(PaymentOutboxRequest.class)))
+                .thenReturn(new PaymentOutboxRequest());
 
-        paymentOutboxService.getBatchOfPendingPaymentRequests();
+        List<PaymentOutboxRequest> result = paymentOutboxService.getBatchOfPendingPaymentRequests();
 
-        verify(paymentOutboxRepository).findAllByStatus(
-                eq(PaymentOutboxStatus.PENDING),
-                pageableCaptor.capture()
-        );
+        assertEquals(customBatchSize, result.size());
 
-        Pageable capturedPageable = pageableCaptor.getValue();
-        assertEquals(5, capturedPageable.getPageSize());
+        verify(mongoTemplate, times(customBatchSize)).findAndModify(any(), any(), any(), eq(PaymentOutboxRequest.class));
     }
 
     @Test
     @DisplayName("getBatchOfPendingPaymentRequests should use ascending timestamp sorting")
     void getBatchOfPendingPaymentRequests_shouldUseAscendingTimestampSorting() {
-        when(paymentOutboxRepository.findAllByStatus(eq(PaymentOutboxStatus.PENDING), any(Pageable.class)))
-                .thenReturn(List.of());
+        PaymentOutboxRequest record = new PaymentOutboxRequest();
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(PaymentOutboxRequest.class)))
+                .thenReturn(record)
+                .thenReturn(null);
+
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
 
         paymentOutboxService.getBatchOfPendingPaymentRequests();
 
-        verify(paymentOutboxRepository).findAllByStatus(
-                eq(PaymentOutboxStatus.PENDING),
-                pageableCaptor.capture()
+        verify(mongoTemplate, atLeastOnce()).findAndModify(
+                queryCaptor.capture(),
+                any(Update.class),
+                any(FindAndModifyOptions.class),
+                eq(PaymentOutboxRequest.class)
         );
 
-        Sort sort = pageableCaptor.getValue().getSort();
-        assertTrue(sort.isSorted());
-        assertEquals("timestamp", sort.iterator().next().getProperty());
-        assertEquals(Sort.Direction.ASC, sort.iterator().next().getDirection());
+        Query capturedQuery = queryCaptor.getValue();
+
+        var sortObject = capturedQuery.getSortObject();
+
+        assertNotNull(sortObject);
+        assertTrue(sortObject.containsKey("timestamp"));
+        assertEquals(1, sortObject.get("timestamp")); // asc order
+
+        assertEquals(PaymentOutboxStatus.PENDING, capturedQuery.getQueryObject().get("status"));
     }
 
     @Test

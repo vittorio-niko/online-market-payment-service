@@ -33,4 +33,10 @@ public class PaymentOutboxScheduler {
     void cleanupSentRecords() {
         paymentOutboxService.cleanupSentRecords();
     }
+
+    @Scheduled(cron = "0 * * * * *")
+    @Transactional
+    void recoverStuckRecords() {
+        paymentOutboxService.recoverStuckRecords();
+    }
 }

@@ -17,7 +17,6 @@ public interface PaymentInboxRepository
 
     Optional<PaymentInboxRequest> findByPaymentId(@NonNull String msgId);
     List<PaymentInboxRequest> findAllByPaymentId(@NonNull String msgId);
-    List<PaymentInboxRequest> findAllByStatus(@NonNull PaymentInboxStatus status, Pageable pageable);
 
     int deleteByStatusAndTimestampBefore(PaymentInboxStatus status, Instant threshold);
 }

@@ -65,6 +65,7 @@ app:
       batch-size: 100
       days-to-store-records: 3
       retries: 5
+      recover-stuck-delay-min: 1
 
 logging:
   level:

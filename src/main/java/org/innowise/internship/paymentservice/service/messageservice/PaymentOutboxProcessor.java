@@ -42,6 +42,8 @@ public class PaymentOutboxProcessor {
         message.setAttempts(message.getAttempts() + 1);
         if (message.getAttempts() >= maxRetries) {
             message.setStatus(PaymentOutboxStatus.FAILED);
+        } else {
+            message.setStatus(PaymentOutboxStatus.PENDING);
         }
         outboxService.saveMessage(message);
     }
