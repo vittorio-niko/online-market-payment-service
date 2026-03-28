@@ -32,7 +32,7 @@ public class DailyPaymentSumLogsService {
         }
 
         Instant day = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-        BigDecimal paymentSum = paymentLogsQueryService.findPaymentSumByDateForAllUsers(date);
+        BigDecimal paymentSum = paymentLogsQueryService.findPaymentSumByDateAndStatusSuccessForAllUsers(date);
 
         Optional<DailyPaymentSumLog> existingLog = dailyPaymentSumLogsRepository.findByDate(day);
 

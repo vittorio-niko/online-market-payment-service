@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -69,15 +68,16 @@ public class PaymentLogsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal findPaymentSumByUserIdAndDateRange(@NonNull String userId,
-                                                         @NonNull LocalDate startDate,
-                                                         @NonNull LocalDate endDate) {
+    public BigDecimal findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
+            @NonNull String userId, @NonNull LocalDate startDate, @NonNull LocalDate endDate
+    ) {
         Instant start = startDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant end = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
         var criteria = new Criteria().andOperator(
                 Criteria.where("user_id").is(userId),
-                Criteria.where("timestamp").gte(start).lt(end)
+                Criteria.where("timestamp").gte(start).lt(end),
+                Criteria.where("status").is(PaymentStatus.SUCCESS)
         );
 
         Aggregation agg = Aggregation.newAggregation(
@@ -97,14 +97,15 @@ public class PaymentLogsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal findPaymentSumByUserIdAndDate(@NonNull String userId,
-                                                    @NonNull LocalDate date) {
+    public BigDecimal findPaymentSumByUserIdAndDateAndStatusSuccess(@NonNull String userId,
+                                                                    @NonNull LocalDate date) {
         Instant day = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant nextDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
         var criteria = new Criteria().andOperator(
                 Criteria.where("user_id").is(userId),
-                Criteria.where("timestamp").gte(day).lt(nextDay)
+                Criteria.where("timestamp").gte(day).lt(nextDay),
+                Criteria.where("status").is(PaymentStatus.SUCCESS)
         );
 
         Aggregation agg = Aggregation.newAggregation(
@@ -124,12 +125,17 @@ public class PaymentLogsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal findPaymentSumByDateForAllUsers(@NonNull LocalDate date) {
+    BigDecimal findPaymentSumByDateAndStatusSuccessForAllUsers(@NonNull LocalDate date) {
         Instant day = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant nextDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
 
+        var criteria = new Criteria().andOperator(
+                Criteria.where("timestamp").gte(day).lt(nextDay),
+                Criteria.where("status").is(PaymentStatus.SUCCESS)
+                );
+
         Aggregation agg = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("timestamp").gte(day).lt(nextDay)),
+                Aggregation.match(criteria),
                 Aggregation.group().sum("payment_amount").as("total")
         );
 
