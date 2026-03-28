@@ -14,7 +14,7 @@ spring:
         journal: true
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: localhost:9092
 
     consumer:
       group-id: test-group
@@ -39,6 +39,12 @@ spring:
     listener:
       ack-mode: record
       concurrency: 5
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/test-realm
 
 mongock:
   enabled: true

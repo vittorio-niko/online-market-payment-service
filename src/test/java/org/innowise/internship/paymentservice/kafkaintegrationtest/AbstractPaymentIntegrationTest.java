@@ -4,6 +4,7 @@ import org.innowise.internship.paymentservice.repository.PaymentInboxRepository;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
 import org.innowise.internship.paymentservice.repository.PaymentOutboxRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;

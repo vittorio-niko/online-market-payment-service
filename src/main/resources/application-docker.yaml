@@ -40,6 +40,12 @@ spring:
       ack-mode: record
       concurrency: 5
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI}
+
 mongock:
   enabled: true
   migration-scan-package:
