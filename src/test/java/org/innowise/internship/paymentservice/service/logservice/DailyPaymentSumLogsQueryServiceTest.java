@@ -4,9 +4,9 @@ import org.bson.Document;
 import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.innowise.internship.paymentservice.repository.DailyPaymentSumLogsRepository;
 import org.innowise.internship.paymentservice.service.exception.businessexception.InvalidArgumentException;
+import org.innowise.internship.paymentservice.service.exception.businessexception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.DisplayName;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -58,12 +58,11 @@ class DailyPaymentSumLogsQueryServiceTest {
         when(dailyPaymentSumLogsRepository.findByDate(pastDateInstant))
                 .thenReturn(Optional.of(expectedLog));
 
-        Optional<DailyPaymentSumLog> result = dailyPaymentSumLogsQueryService.findByDate(pastDate);
+        DailyPaymentSumLog result = dailyPaymentSumLogsQueryService.findByDate(pastDate);
 
-        assertTrue(result.isPresent());
-        assertEquals(expectedLog, result.get());
-        assertEquals(pastDateInstant, result.get().getDate());
-        assertEquals(BigDecimal.valueOf(1000), result.get().getPaymentSum());
+        assertEquals(expectedLog, result);
+        assertEquals(pastDateInstant, result.getDate());
+        assertEquals(BigDecimal.valueOf(1000), result.getPaymentSum());
         verify(dailyPaymentSumLogsRepository).findByDate(pastDateInstant);
     }
 
@@ -72,9 +71,9 @@ class DailyPaymentSumLogsQueryServiceTest {
         when(dailyPaymentSumLogsRepository.findByDate(pastDateInstant))
                 .thenReturn(Optional.empty());
 
-        Optional<DailyPaymentSumLog> result = dailyPaymentSumLogsQueryService.findByDate(pastDate);
+        assertThrows(NotFoundException.class,
+                () -> dailyPaymentSumLogsQueryService.findByDate(pastDate));
 
-        assertTrue(result.isEmpty());
         verify(dailyPaymentSumLogsRepository).findByDate(pastDateInstant);
     }
 

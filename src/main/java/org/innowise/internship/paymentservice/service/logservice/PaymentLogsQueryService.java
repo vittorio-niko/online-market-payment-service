@@ -6,6 +6,7 @@ import org.bson.Document;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
+import org.innowise.internship.paymentservice.service.exception.businessexception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -29,8 +30,9 @@ public class PaymentLogsQueryService {
     private final MongoTemplate mongoTemplate;
 
     @Transactional(readOnly = true)
-    public Optional<PaymentLog> findByPaymentId(@NonNull String paymentId) {
-        return paymentLogsRepository.findByPaymentId(paymentId);
+    public PaymentLog findByPaymentId(@NonNull String paymentId) {
+        return paymentLogsRepository.findByPaymentId(paymentId)
+                .orElseThrow(() -> new NotFoundException("Payment log not found"));
     }
 
     @Transactional(readOnly = true)
