@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -46,7 +47,7 @@ public class PaymentOutboxService {
 
     private final MongoTemplate mongoTemplate;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean reserve(@NonNull CreatePaymentOutboxRequestDto dto) {
         try {
             PaymentOutboxRequest request = paymentOutboxRequestMapper.toPaymentOutboxRequest(dto);
