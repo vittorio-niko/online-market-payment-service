@@ -63,7 +63,7 @@ services:
     build: .
     container_name: payment-service
     ports:
-      - "8085:8080"
+      - "${PAYMENT_SERVICE_PORT_EXTERNAL}:${PAYMENT_SERVICE_PORT_INTERNAL}"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=${SERVER_PORT}
