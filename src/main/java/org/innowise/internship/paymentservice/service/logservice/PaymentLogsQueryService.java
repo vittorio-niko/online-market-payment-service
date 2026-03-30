@@ -3,6 +3,7 @@ package org.innowise.internship.paymentservice.service.logservice;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
@@ -89,10 +90,12 @@ public class PaymentLogsQueryService {
                 agg, "payments", Document.class
         );
 
-        if (results.getUniqueMappedResult() == null) {
+        var result = results.getUniqueMappedResult();
+        if (result == null) {
             return BigDecimal.ZERO;
         } else {
-            return results.getUniqueMappedResult().get("total", BigDecimal.class);
+            Object total = result.get("total");
+            return ((Decimal128) total).bigDecimalValue();
         }
     }
 
@@ -117,10 +120,12 @@ public class PaymentLogsQueryService {
                 agg, "payments", Document.class
         );
 
-        if (results.getUniqueMappedResult() == null) {
+        var result = results.getUniqueMappedResult();
+        if (result == null) {
             return BigDecimal.ZERO;
         } else {
-            return results.getUniqueMappedResult().get("total", BigDecimal.class);
+            Object total = result.get("total");
+            return ((Decimal128) total).bigDecimalValue();
         }
     }
 
@@ -143,10 +148,12 @@ public class PaymentLogsQueryService {
                 agg, "payments", Document.class
         );
 
-        if (results.getUniqueMappedResult() == null) {
+        var result = results.getUniqueMappedResult();
+        if (result == null) {
             return BigDecimal.ZERO;
         } else {
-            return results.getUniqueMappedResult().get("total", BigDecimal.class);
+            Object total = result.get("total");
+            return ((Decimal128) total).bigDecimalValue();
         }
     }
 }
