@@ -41,7 +41,8 @@ public class InitPaymentOutboxMigration {
 
     private MongoJsonSchema setupSchema() {
         return MongoJsonSchema.builder()
-                .required("payment_id", "order_id", "user_id", "timestamp", "status", "attempts")
+                .required("payment_id", "order_id", "user_id", "timestamp",
+                        "payment_status", "status", "attempts")
                 .properties(
                         JsonSchemaProperty.string("payment_id"),
                         JsonSchemaProperty.int64("order_id"),
