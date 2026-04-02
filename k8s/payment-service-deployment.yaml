@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      initContainers:
+        - name: wait-for-mongo-replica
+          image: mongo:6.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for payment-db port 27017..."
+              until timeout 1 bash -c "cat < /dev/null > /dev/tcp/payment-db/27017" 2>/dev/null; do
+                echo "Database port is not reachable yet. Sleeping 2s..."
+                sleep 2
+              done
+              echo "MongoDB port is OPEN!"
+              sleep 5
+              echo "Ready to start payment-service."
+
+      containers:
+        - name: payment-service
+          image: payment-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: payment-service-config-map
+            - secretRef:
+                name: payment-service-secret
+            - secretRef:
+                name: payment-db-secret
+          resources:
+            limits:
+              memory: 800Mi
+              cpu: 500m
+            requests:
+              memory: 512Mi
+              cpu: 250m
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 10
+      restartPolicy: Always

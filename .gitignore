@@ -36,6 +36,9 @@ target/
 *.tar.gz
 *.rar
 .env
+k8s/resolved-compose.yaml
+k8s/payment-db-secret.yaml
+k8s/payment-service-secret.yaml
 
 hs_err_pid*
 replay_pid*
