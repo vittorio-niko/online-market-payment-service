@@ -3,6 +3,7 @@ package org.innowise.internship.paymentservice.service.messageservice;
 import com.mongodb.DuplicateKeyException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentOutboxRequestDto;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
@@ -24,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentOutboxService {
@@ -48,6 +50,7 @@ public class PaymentOutboxService {
             request.setTimestamp(Instant.now());
             request.setStatus(PaymentOutboxStatus.PENDING);
             paymentOutboxRepository.insert(request);
+            log.info("Payment report for payment with id {} is ready to be sent", dto.getPaymentId());
             return true;
         } catch (DuplicateKeyException e) {
             return false;

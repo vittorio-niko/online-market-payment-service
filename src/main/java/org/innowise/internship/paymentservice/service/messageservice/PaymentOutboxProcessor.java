@@ -1,6 +1,7 @@
 package org.innowise.internship.paymentservice.service.messageservice;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.PaymentResultEventDto;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxRequest;
 import org.innowise.internship.paymentservice.model.entity.outbox.PaymentOutboxStatus;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentOutboxProcessor {
@@ -30,6 +32,7 @@ public class PaymentOutboxProcessor {
             PaymentResultEventDto event = mapper.toPaymentResultEventDto(message);
 
             kafkaTemplate.send(topic, message.getPaymentId(), event).get();
+            log.info("Payment report for payment with id {} is sent", message.getPaymentId());
 
             message.setStatus(PaymentOutboxStatus.SENT);
             outboxService.saveMessage(message);
