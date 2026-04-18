@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: payment-service
   config:
     activate:
       on-profile: k8s
@@ -37,6 +39,7 @@ spring:
         spring.json.add.type.headers: false
 
     listener:
+      observation-enabled: true
       ack-mode: record
       concurrency: 5
 
@@ -78,3 +81,33 @@ app:
 
 server:
   port: 8080
+
+logging:
+  level:
+    root: INFO
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    okhttp3: WARN
+    org.innowise.internship: INFO
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: ${SAMPLING_PROBABILITY}
+  otlp:
+    tracing:
+      endpoint: ${TEMPO_URL}
