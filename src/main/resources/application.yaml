@@ -1,7 +1,13 @@
 spring:
+  threads:
+    virtual:
+      enabled: true
   data:
     mongodb:
       uri: ${MONGO_DB_URI:mongodb://admin:password@localhost:27017/payment_db?authSource=admin}
+      write-concern:
+        w: majority
+        journal: true
 
 mongock:
   enabled: true
@@ -9,6 +15,41 @@ mongock:
     - org.innowise.internship.paymentservice.migrations
   migration-repository-name: mongockChangeLog
   lock-repository-name: mongockLock
+
+kafka:
+  bootstrap-servers: {KAFKA_BOOTSTRAP_PORT:localhost:9092}
+
+  consumer:
+    group-id: payment-group
+    auto-offset-reset: earliest
+    enable-auto-commit: false
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+    properties:
+      spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+      spring.json.trusted.packages: "org.innowise.internship.paymentservice.model.dto.messagerequest"
+
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    acks: all
+    retries: 10
+    properties:
+      enable.idempotence: true
+
+  listener:
+    ack-mode: record
+    concurrency: 5
+
+app:
+  kafka:
+    topics:
+      payment-requests: "payment-requests-topic"
+      payment-results: "payment-results-topic"
+    outbox:
+      publish-delay: 1000
+      batch-size: 100
+      retries: 5
 
 server:
   port: ${SERVER_PORT:8080}

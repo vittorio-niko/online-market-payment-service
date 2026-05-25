@@ -1,6 +1,6 @@
 package org.innowise.internship.paymentservice.repository;
 
-import org.innowise.internship.paymentservice.model.entity.DailyPaymentSumLog;
+import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

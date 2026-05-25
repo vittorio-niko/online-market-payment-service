@@ -1,7 +1,7 @@
 package org.innowise.internship.paymentservice.repository;
 
-import org.innowise.internship.paymentservice.model.entity.PaymentLog;
-import org.innowise.internship.paymentservice.model.entity.PaymentStatus;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

@@ -1,6 +1,9 @@
-package org.innowise.internship.paymentservice.model.entity;
+package org.innnowise.internship.paymentservice.model.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -9,7 +12,6 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Builder
 @Getter
 @Setter
 @NoArgsConstructor

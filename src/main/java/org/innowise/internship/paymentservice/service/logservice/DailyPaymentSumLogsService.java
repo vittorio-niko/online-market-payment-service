@@ -1,12 +1,11 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.logservice;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreateDailyPaymentSumLogRequestDto;
-import org.innowise.internship.paymentservice.model.entity.DailyPaymentSumLog;
+import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.innowise.internship.paymentservice.model.mapper.DailyPaymentSumLogMapper;
 import org.innowise.internship.paymentservice.repository.DailyPaymentSumLogsRepository;
-import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
 import org.innowise.internship.paymentservice.service.exception.businessexception.InvalidArgumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

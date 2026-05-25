@@ -1,9 +1,9 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.logservice;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreatePaymentLogRequestDto;
-import org.innowise.internship.paymentservice.model.entity.PaymentLog;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.mapper.PaymentLogMapper;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
 import org.springframework.stereotype.Service;

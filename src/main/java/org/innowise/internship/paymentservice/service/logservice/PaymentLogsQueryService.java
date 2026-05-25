@@ -1,10 +1,10 @@
-package org.innowise.internship.paymentservice.service;
+package org.innowise.internship.paymentservice.service.logservice;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
-import org.innowise.internship.paymentservice.model.entity.PaymentLog;
-import org.innowise.internship.paymentservice.model.entity.PaymentStatus;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
+import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
