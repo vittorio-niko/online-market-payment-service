@@ -1,4 +1,4 @@
-package org.innnowise.internship.paymentservice.migrations;
+package org.innowise.internship.paymentservice.migrations;
 
 import io.mongock.api.annotations.ChangeUnit;
 import io.mongock.api.annotations.Execution;
