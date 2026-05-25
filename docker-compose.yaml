@@ -1,0 +1,80 @@
+services:
+  payment-db:
+    image: mongo:6.0
+    container_name: payment-mongodb
+    entrypoint:
+      - bash
+      - -c
+      - |
+        if [ ! -f /data/db/keyfile ]; then
+          echo "MySecretKeyForTransactions123" > /data/db/keyfile
+          chmod 400 /data/db/keyfile
+          chown 999:999 /data/db/keyfile
+        fi
+
+        /usr/local/bin/docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --keyFile /data/db/keyfile &
+        
+        echo "Waiting for MongoDB to start..."
+        until mongosh --quiet --eval "db.runCommand('ping').ok" &>/dev/null; do
+          sleep 2
+        done
+        
+        echo "Initiating Replica Set..."
+        mongosh --quiet --eval "try { rs.initiate({_id:'rs0', members:[{_id:0, host:'payment-db:27017'}]}) } catch(e) { print('Already init'); }"
+        
+        echo "Waiting for node to become PRIMARY..."
+        until mongosh --quiet --eval "rs.isMaster().ismaster" | grep -q "true"; do
+          sleep 2
+        done
+        
+        echo "MongoDB is READY for transactions!"
+        wait
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+    ports:
+      - "27017:27017"
+    volumes:
+      - payment_mongodb_data:/data/db
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9094'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+  payment-service:
+    build: .
+    container_name: payment-service
+    ports:
+      - "8085:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - MONGO_DB_URI=mongodb://${MONGO_USER}:${MONGO_PASS}@payment-db:27017/${MONGO_DB_NAME}?authSource=admin&replicaSet=rs0&serverSelectionTimeoutMS=50000&connectTimeoutMS=30000
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+volumes:
+  payment_mongodb_data:
