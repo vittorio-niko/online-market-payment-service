@@ -1,0 +1,14 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI:mongodb://admin:password@localhost:27017/payment_db?authSource=admin}
+
+mongock:
+  enabled: true
+  migration-scan-package:
+    - org.innowise.internship.paymentservice.migrations
+  migration-repository-name: mongockChangeLog
+  lock-repository-name: mongockLock
+
+server:
+  port: ${SERVER_PORT:8080}
