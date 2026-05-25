@@ -39,7 +39,6 @@ public class PaymentOutboxScheduler {
     private void sendToKafka(PaymentOutboxRequest message) {
         try {
             PaymentResultEventDto kafkaDto = paymentOutboxRequestMapper.toPaymentResultEventDto(message);
-
             kafkaTemplate.send(paymentResultsTopic, message.getPaymentId(), kafkaDto).get();
 
             message.setStatus(PaymentOutboxStatus.SENT);
@@ -47,7 +46,7 @@ public class PaymentOutboxScheduler {
         } catch (Exception e) {
             message.setAttempts(message.getAttempts() + 1);
 
-            if(message.getAttempts() > maxRetriesCount) {
+            if (message.getAttempts() > maxRetriesCount) {
                 message.setStatus(PaymentOutboxStatus.FAILED);
             }
 

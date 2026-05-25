@@ -1,6 +1,6 @@
 package org.innowise.internship.paymentservice.service.messageservice;
 
-import com.mongodb.DuplicateKeyException;
+import org.springframework.dao.DuplicateKeyException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentInboxRequestDto;
@@ -27,10 +27,7 @@ public class PaymentInboxService {
             paymentInboxRepository.insert(request);
             return true;
         } catch (DuplicateKeyException e) {
-            // allow retries
-            return paymentInboxRepository.findByMsgId(dto.getMsgId())
-                    .map(existing -> existing.getStatus() == PaymentInboxStatus.PROCESSING)
-                    .orElse(false);
+            return false;
         }
     }
 

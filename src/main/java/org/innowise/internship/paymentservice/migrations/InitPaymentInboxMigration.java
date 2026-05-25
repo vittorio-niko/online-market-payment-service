@@ -1,8 +1,6 @@
 package org.innowise.internship.paymentservice.migrations;
 
-import io.mongock.api.annotations.ChangeUnit;
-import io.mongock.api.annotations.Execution;
-import io.mongock.api.annotations.RollbackExecution;
+import io.mongock.api.annotations.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.CollectionOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,27 +17,31 @@ import java.time.Duration;
 )
 public class InitPaymentInboxMigration {
 
-    @Execution
-    public void execute(MongoTemplate mongoTemplate) {
-        MongoJsonSchema schema = setupSchema();
+    private static final Integer daysForMessageToLive = 7;
 
+    @BeforeExecution
+    public void beforeExecution(MongoTemplate mongoTemplate) {
         if (!mongoTemplate.collectionExists("inbox_payment_requests")) {
             mongoTemplate.createCollection("inbox_payment_requests",
-                    CollectionOptions.empty().schema(schema));
+                    CollectionOptions.empty().schema(setupSchema()));
         }
-
         setupIndices(mongoTemplate);
     }
 
+    @Execution
+    public void execute(MongoTemplate mongoTemplate) { }
+
     @RollbackExecution
-    public void rollbackExecution(MongoTemplate mongoTemplate) {
+    public void rollbackExecution(MongoTemplate mongoTemplate) { }
+
+    @RollbackBeforeExecution
+    public void rollbackBeforeExecution(MongoTemplate mongoTemplate) {
         mongoTemplate.dropCollection("inbox_payment_requests");
     }
 
     private MongoJsonSchema setupSchema() {
         return MongoJsonSchema.builder()
-                .required("msg_id", "order_id", "user_id",
-                        "timestamp", "status", "payment_amount")
+                .required("msg_id", "order_id", "user_id", "timestamp", "status", "payment_amount")
                 .properties(
                         JsonSchemaProperty.string("msg_id"),
                         JsonSchemaProperty.int64("order_id"),
@@ -51,27 +53,25 @@ public class InitPaymentInboxMigration {
     }
 
     private void setupIndices(MongoTemplate mongoTemplate) {
-        mongoTemplate.indexOps("inbox_payment_requests").ensureIndex(
+        var indexOps = mongoTemplate.indexOps("inbox_payment_requests");
+
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_inbox_payment_requests_msg_id")
                         .on("msg_id", Sort.Direction.ASC)
                         .unique()
         );
-
-        mongoTemplate.indexOps("inbox_payment_requests").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_inbox_payment_requests_status_timestamp")
                         .on("status", Sort.Direction.ASC)
                         .on("timestamp", Sort.Direction.ASC)
         );
-
-        mongoTemplate.indexOps("inbox_payment_requests").ensureIndex(
+        indexOps.ensureIndex(
                 new Index()
                         .named("idx_inbox_payment_requests_ttl")
                         .on("timestamp", Sort.Direction.ASC)
                         .expire(Duration.ofDays(daysForMessageToLive))
         );
     }
-
-    private static final Integer daysForMessageToLive = 7;
 }

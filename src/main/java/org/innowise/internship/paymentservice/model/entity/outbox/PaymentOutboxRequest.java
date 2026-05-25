@@ -33,5 +33,6 @@ public class PaymentOutboxRequest {
     private PaymentOutboxStatus status;
 
     @Field("attempts")
+    @Builder.Default
     private Integer attempts = 0;
 }
