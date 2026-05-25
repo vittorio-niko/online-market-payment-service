@@ -47,6 +47,7 @@ public class InitPaymentOutboxMigration {
                         JsonSchemaProperty.int64("order_id"),
                         JsonSchemaProperty.string("user_id"),
                         JsonSchemaProperty.date("timestamp"),
+                        JsonSchemaProperty.string("payment_status"),
                         JsonSchemaProperty.string("status"),
                         JsonSchemaProperty.int32("attempts")
                 ).build();

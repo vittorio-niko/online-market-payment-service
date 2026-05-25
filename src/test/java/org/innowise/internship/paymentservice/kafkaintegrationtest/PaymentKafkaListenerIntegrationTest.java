@@ -48,17 +48,17 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
     @Autowired
     private PaymentLogsRepository paymentLogsRepository;
 
-    @Value("${app.kafka.topics.payment-requests}")
+    @Value("${app.kafka.topics.payment-requests.name}")
     private String paymentRequestsTopic;
 
-    @Value("${app.kafka.topics.payment-results}")
+    @Value("${app.kafka.topics.payment-results.name}")
     private String paymentResultsTopic;
 
     private Consumer<String, PaymentResultEventDto> resultConsumer;
 
     @BeforeEach
     void setUp() {
-        clearMongoCollections();
+        cleanDatabase();
         setupResultConsumer();
     }
 
@@ -72,7 +72,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
     @Test
     void inboxSchema_shouldRejectInvalidDocumentFormat() {
         org.bson.Document invalidDoc = new org.bson.Document()
-                .append("msg_id", UUID.randomUUID().toString())
+                .append("payment_id", UUID.randomUUID().toString())
                 .append("order_id", 123L)
                 .append("user_id", "user-1")
                 .append("payment_amount", "not-a-number")
@@ -86,22 +86,22 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
 
     @Test
     void idempotency_shouldNotDuplicateLogIfOutboxWasMissing() throws Exception {
-        String msgId = UUID.randomUUID().toString();
+        String paymentId = "pay-ment-id";
         Long orderId = 999L;
 
         // inbox
         inboxRepository.save(PaymentInboxRequest.builder()
-                .msgId(msgId)
+                .paymentId(paymentId)
                 .orderId(orderId)
                 .userId("user-1")
-                .status(PaymentInboxStatus.COMPLETED)
+                .status(PaymentInboxStatus.PROCESSED)
                 .paymentAmount(BigDecimal.TEN)
                 .timestamp(java.time.Instant.now())
                 .build());
 
         // log
         paymentLogsRepository.save(PaymentLog.builder()
-                .paymentId("pay-" + msgId)
+                .paymentId(paymentId)
                 .orderId(orderId)
                 .userId("user-1")
                 .status(PaymentStatus.SUCCESS)
@@ -111,42 +111,46 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
 
         // action: message duplicate
         CreatePaymentInboxRequestDto dto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
+                .paymentId(paymentId)
                 .userId("user-1")
                 .orderId(orderId)
                 .paymentAmount(BigDecimal.TEN)
                 .build();
 
-        kafkaTemplate.send(paymentRequestsTopic, msgId, dto).get();
+        kafkaTemplate.send(paymentRequestsTopic, paymentId, dto).get();
 
         // extra log has not been created
-        Thread.sleep(2000);
-        assertThat(paymentLogsRepository.findByOrderId(orderId)).hasSize(1);
+        await()
+                .during(Duration.ofSeconds(2))
+                .atMost(Duration.ofSeconds(3))
+                .untilAsserted(() -> {
+                    assertThat(paymentLogsRepository.findByOrderId(orderId)).hasSize(1);
+                });
     }
 
     @Test
     void shouldProcessPaymentSuccessfully() throws Exception {
-        String msgId = UUID.randomUUID().toString();
+        String paymentId = UUID.randomUUID().toString();
         CreatePaymentInboxRequestDto dto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
+                .paymentId(paymentId)
                 .userId("user-123")
                 .orderId(456L)
                 .paymentAmount(BigDecimal.valueOf(99.99))
                 .build();
 
-        kafkaTemplate.send(paymentRequestsTopic, msgId, dto).get(5, TimeUnit.SECONDS);
+        kafkaTemplate.send(paymentRequestsTopic, paymentId, dto).get(5, TimeUnit.SECONDS);
 
         // scheduler should process inbox message
         await()
                 .atMost(Duration.ofSeconds(10))
                 .pollInterval(Duration.ofMillis(500))
                 .untilAsserted(() -> {
-                    PaymentInboxRequest inboxRequest = inboxRepository.findByMsgId(msgId).orElse(null);
+                    PaymentInboxRequest inboxRequest = inboxRepository.findByPaymentId(paymentId).orElse(null);
                     assertThat(inboxRequest).isNotNull();
-                    assertThat(inboxRequest.getStatus()).isEqualTo(PaymentInboxStatus.COMPLETED);
+                    assertThat(inboxRequest.getStatus()).isEqualTo(PaymentInboxStatus.PROCESSED);
                 });
 
-        //  payment log should be created
+        // payment log should be created
         await()
                 .atMost(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
@@ -163,9 +167,10 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
                 .atMost(Duration.ofSeconds(5))
                 .untilAsserted(() -> {
                     List<PaymentLog> logs = paymentLogsRepository.findByOrderId(456L);
-                    String paymentId = logs.getFirst().getPaymentId();
+                    String gotPaymentId = logs.getFirst().getPaymentId();
 
-                    PaymentOutboxRequest outboxRequest = outboxRepository.findByPaymentId(paymentId).orElse(null);
+                    assertThat(gotPaymentId).isEqualTo(paymentId);
+                    PaymentOutboxRequest outboxRequest = outboxRepository.findByPaymentId(gotPaymentId).orElse(null);
                     assertThat(outboxRequest).isNotNull();
                     assertThat(outboxRequest.getStatus()).isEqualTo(PaymentOutboxStatus.SENT);
                 });
@@ -185,32 +190,28 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
 
     @Test
     void shouldHandleDuplicateMessageAndSkipProcessing() throws Exception {
-        String msgId = UUID.randomUUID().toString();
+        String paymentId = UUID.randomUUID().toString();
         CreatePaymentInboxRequestDto dto = CreatePaymentInboxRequestDto.builder()
-                .msgId(msgId)
+                .paymentId(paymentId)
                 .userId("user-789")
                 .orderId(101L)
                 .paymentAmount(BigDecimal.valueOf(75.00))
                 .build();
 
         // first message
-        kafkaTemplate.send(paymentRequestsTopic, msgId, dto).get(5, TimeUnit.SECONDS);
+        kafkaTemplate.send(paymentRequestsTopic, paymentId, dto).get(5, TimeUnit.SECONDS);
 
         Thread.sleep(2000);
 
         // duplicate
-        kafkaTemplate.send(paymentRequestsTopic, msgId, dto).get(5, TimeUnit.SECONDS);
+        kafkaTemplate.send(paymentRequestsTopic, paymentId, dto).get(5, TimeUnit.SECONDS);
 
         // only one payment log
         await()
                 .atMost(Duration.ofSeconds(5))
                 .untilAsserted(() -> assertThat(paymentLogsRepository.findByOrderId(101L)).hasSize(1));
 
-        // only one inbox request
-        List<PaymentInboxRequest> inboxRequests = inboxRepository.findAll();
-        for (var request : inboxRequests) {
-            System.err.println(request.toString());
-        }
+        List<PaymentInboxRequest> inboxRequests = inboxRepository.findAllByPaymentId(paymentId);
         assertThat(inboxRequests).hasSize(1);
     }
 
@@ -226,13 +227,13 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
             expectedOrderIds.add(orderId);
 
             CreatePaymentInboxRequestDto dto = CreatePaymentInboxRequestDto.builder()
-                    .msgId(UUID.randomUUID().toString())
+                    .paymentId(UUID.randomUUID().toString())
                     .userId("user-" + i)
                     .orderId(orderId)
                     .paymentAmount(BigDecimal.valueOf(i * 10.0))
                     .build();
 
-            kafkaTemplate.send(paymentRequestsTopic, dto.getMsgId(), dto).get(5, TimeUnit.SECONDS);
+            kafkaTemplate.send(paymentRequestsTopic, dto.getPaymentId(), dto).get(5, TimeUnit.SECONDS);
         }
 
         // check if our messages are in result topic

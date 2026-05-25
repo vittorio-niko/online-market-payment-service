@@ -29,8 +29,11 @@ public class PaymentOutboxRequest {
     @Field("timestamp")
     private Instant timestamp;
 
+    @Field("payment_status")
+    private String paymentStatus;
+
     @Field("status")
-    private PaymentOutboxStatus status;
+    private PaymentOutboxStatus status = PaymentOutboxStatus.PENDING;
 
     @Field("attempts")
     @Builder.Default
