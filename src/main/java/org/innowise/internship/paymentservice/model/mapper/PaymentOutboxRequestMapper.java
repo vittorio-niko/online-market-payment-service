@@ -17,6 +17,7 @@ public interface PaymentOutboxRequestMapper {
             @NonNull CreatePaymentOutboxRequestDto dto
     );
 
+    @Mapping(source = "status", target = "paymentStatus")
     CreatePaymentOutboxRequestDto toCreatePaymentOutboxRequestDto(
             @NonNull PaymentLog paymentLog
     );

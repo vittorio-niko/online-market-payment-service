@@ -24,6 +24,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - local_market_net
 
   db-setup:
     image: mongo:6.0
@@ -41,12 +43,14 @@ services:
       } catch (e) {
         console.log("Already initialized");
       }'
+    networks:
+      - local_market_net
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka
     ports:
-      - "9094:9094"
+      - "9092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
@@ -58,12 +62,14 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    networks:
+      - local_market_net
 
   payment-service:
     build: .
     container_name: payment-service
     ports:
-      - "8085:8080"
+      - "${PAYMENT_SERVICE_PORT_EXTERNAL}:${PAYMENT_SERVICE_PORT_INTERNAL}"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=${SERVER_PORT}
@@ -75,6 +81,12 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
+    networks:
+      - local_market_net
 
 volumes:
   payment_mongodb_data:
+
+networks:
+  local_market_net:
+    external: true

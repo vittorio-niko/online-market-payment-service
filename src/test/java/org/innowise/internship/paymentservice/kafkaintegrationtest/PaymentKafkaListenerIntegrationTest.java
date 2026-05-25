@@ -173,6 +173,7 @@ class PaymentKafkaListenerIntegrationTest extends AbstractPaymentIntegrationTest
                     PaymentOutboxRequest outboxRequest = outboxRepository.findByPaymentId(gotPaymentId).orElse(null);
                     assertThat(outboxRequest).isNotNull();
                     assertThat(outboxRequest.getStatus()).isEqualTo(PaymentOutboxStatus.SENT);
+                    assertThat(outboxRequest.getPaymentStatus()).isNotNull();
                 });
 
         // result topic

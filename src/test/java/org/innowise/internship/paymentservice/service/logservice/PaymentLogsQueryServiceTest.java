@@ -1,6 +1,7 @@
 package org.innowise.internship.paymentservice.service.logservice;
 
 import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
@@ -187,17 +188,19 @@ class PaymentLogsQueryServiceTest {
 
     @Test
     void findPaymentSumByUserIdAndDateRange_shouldReturnSum_whenResultsExist() {
-        Document resultDoc = new Document("total", BigDecimal.valueOf(3500.25));
+        Decimal128 mongoDecimal = new Decimal128(new BigDecimal("1200.50"));
+        Document resultDoc = new Document("total", mongoDecimal);
+
         AggregationResults<Document> aggregationResults = mock(AggregationResults.class);
 
         when(aggregationResults.getUniqueMappedResult()).thenReturn(resultDoc);
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
+        var result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
                 userId, startDate, endDate);
 
-        assertEquals(BigDecimal.valueOf(3500.25), result);
+        assertEquals(0, new BigDecimal("1200.50").compareTo(result));
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
     }
 
@@ -220,17 +223,18 @@ class PaymentLogsQueryServiceTest {
 
     @Test
     void findPaymentSumByUserIdAndDate_shouldReturnSum_whenResultsExist() {
-        Document resultDoc = new Document("total", BigDecimal.valueOf(1200.50));
+        Decimal128 mongoDecimal = new Decimal128(new BigDecimal("1200.50"));
+        Document resultDoc = new Document("total", mongoDecimal);
+
         AggregationResults<Document> aggregationResults = mock(AggregationResults.class);
 
         when(aggregationResults.getUniqueMappedResult()).thenReturn(resultDoc);
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(userId, date);
+        var result = paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(userId, date);
 
-        assertEquals(BigDecimal.valueOf(1200.50), result);
-        verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
+        assertEquals(0, new BigDecimal("1200.50").compareTo(result));
     }
 
     @Test
@@ -249,16 +253,17 @@ class PaymentLogsQueryServiceTest {
 
     @Test
     void findPaymentSumByDateForAllUsers_shouldReturnSum_whenResultsExist() {
-        Document resultDoc = new Document("total", BigDecimal.valueOf(5000.00));
+        Decimal128 mongoDecimal = new Decimal128(new BigDecimal("1200.50"));
+        Document resultDoc = new Document("total", mongoDecimal);
         AggregationResults<Document> aggregationResults = mock(AggregationResults.class);
 
         when(aggregationResults.getUniqueMappedResult()).thenReturn(resultDoc);
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByDateAndStatusSuccessForAllUsers(date);
+        var result = paymentLogsQueryService.findPaymentSumByDateAndStatusSuccessForAllUsers(date);
 
-        assertEquals(BigDecimal.valueOf(5000.00), result);
+        assertEquals(0, new BigDecimal("1200.50").compareTo(result));
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
     }
 

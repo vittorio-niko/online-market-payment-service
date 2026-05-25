@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.innowise.internship.paymentservice.model.dto.log.response.DailyPaymentSumLogResponseDto;
 import org.innowise.internship.paymentservice.model.dto.log.response.PaymentLogResponseDto;
 import org.innowise.internship.paymentservice.model.dto.log.response.PaymentLogSummaryResponseDto;
+import org.innowise.internship.paymentservice.model.dto.log.response.PaymentSumResponseDto;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.mapper.DailyPaymentSumLogMapper;
 import org.innowise.internship.paymentservice.model.mapper.PaymentLogMapper;
@@ -63,27 +64,29 @@ public class AdminController {
     }
 
     @GetMapping("/users/{userId}/payment-sum")
-    public ResponseEntity<BigDecimal> getPaymentSumByUserIdAndDate(
+    public ResponseEntity<PaymentSumResponseDto> getPaymentSumByUserIdAndDate(
             @PathVariable String userId,
             @RequestParam LocalDate date
     ) {
+        BigDecimal sum = paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(
+                userId, date
+        );
         return ResponseEntity.ok(
-                paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(
-                        userId, date
-                )
+                new PaymentSumResponseDto(sum)
         );
     }
 
     @GetMapping("/users/{userId}/payment-sum/range")
-    public ResponseEntity<BigDecimal> getPaymentSumByUserIdAndDateRange(
+    public ResponseEntity<PaymentSumResponseDto> getPaymentSumByUserIdAndDateRange(
             @PathVariable String userId,
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate
     ) {
+        BigDecimal sum = paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
+                userId, startDate, endDate
+        );
         return ResponseEntity.ok(
-                paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
-                        userId, startDate, endDate
-                )
+                new PaymentSumResponseDto(sum)
         );
     }
 
@@ -111,12 +114,14 @@ public class AdminController {
     }
 
     @GetMapping("/daily-sum/range/total")
-    public ResponseEntity<BigDecimal> getTotalPaymentSumForAllUsersByDateRange(
+    public ResponseEntity<PaymentSumResponseDto> getTotalPaymentSumForAllUsersByDateRange(
             @RequestParam LocalDate startDate,
             @RequestParam LocalDate endDate)
     {
+        BigDecimal sum =
+                dailyPaymentSumLogsQueryService.findPaymentSumByDateRangeForAllUsers(startDate, endDate);
         return ResponseEntity.ok(
-                dailyPaymentSumLogsQueryService.findPaymentSumByDateRangeForAllUsers(startDate, endDate)
+                new PaymentSumResponseDto(sum)
         );
     }
 }
