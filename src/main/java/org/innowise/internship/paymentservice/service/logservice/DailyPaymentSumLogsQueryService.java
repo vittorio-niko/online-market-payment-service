@@ -6,6 +6,7 @@ import org.bson.Document;
 import org.innowise.internship.paymentservice.model.entity.log.DailyPaymentSumLog;
 import org.innowise.internship.paymentservice.repository.DailyPaymentSumLogsRepository;
 import org.innowise.internship.paymentservice.service.exception.businessexception.InvalidArgumentException;
+import org.innowise.internship.paymentservice.service.exception.businessexception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -28,13 +29,14 @@ public class DailyPaymentSumLogsQueryService {
     private final MongoTemplate mongoTemplate;
 
     @Transactional(readOnly = true)
-    public Optional<DailyPaymentSumLog> findByDate(@NonNull LocalDate date) {
+    public DailyPaymentSumLog findByDate(@NonNull LocalDate date) {
         if (date.isAfter(LocalDate.now())) {
             throw new InvalidArgumentException("Payments for future dates do not exist");
         }
 
         Instant start = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-        return dailyPaymentSumLogsRepository.findByDate(start);
+        return dailyPaymentSumLogsRepository.findByDate(start)
+                .orElseThrow(() -> new NotFoundException("Payment sum log for this date is not found"));
     }
 
     @Transactional(readOnly = true)

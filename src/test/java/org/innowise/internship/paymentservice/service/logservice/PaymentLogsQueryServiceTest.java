@@ -4,10 +4,9 @@ import org.bson.Document;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentLog;
 import org.innowise.internship.paymentservice.model.entity.log.PaymentStatus;
 import org.innowise.internship.paymentservice.repository.PaymentLogsRepository;
+import org.innowise.internship.paymentservice.service.exception.businessexception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.DisplayName;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,10 +61,9 @@ class PaymentLogsQueryServiceTest {
         when(paymentLogsRepository.findByPaymentId(paymentId))
                 .thenReturn(Optional.of(expectedLog));
 
-        Optional<PaymentLog> result = paymentLogsQueryService.findByPaymentId(paymentId);
+        PaymentLog result = paymentLogsQueryService.findByPaymentId(paymentId);
 
-        assertTrue(result.isPresent());
-        assertEquals(expectedLog, result.get());
+        assertEquals(expectedLog, result);
         verify(paymentLogsRepository).findByPaymentId(paymentId);
     }
 
@@ -74,9 +72,9 @@ class PaymentLogsQueryServiceTest {
         when(paymentLogsRepository.findByPaymentId(paymentId))
                 .thenReturn(Optional.empty());
 
-        Optional<PaymentLog> result = paymentLogsQueryService.findByPaymentId(paymentId);
+        assertThrows(NotFoundException.class,
+                () -> paymentLogsQueryService.findByPaymentId(paymentId));
 
-        assertTrue(result.isEmpty());
         verify(paymentLogsRepository).findByPaymentId(paymentId);
     }
 
@@ -196,7 +194,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRange(
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
                 userId, startDate, endDate);
 
         assertEquals(BigDecimal.valueOf(3500.25), result);
@@ -211,7 +209,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRange(
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateRangeAndStatusSuccess(
                 userId, startDate, endDate);
 
         assertEquals(BigDecimal.ZERO, result);
@@ -229,7 +227,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDate(userId, date);
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(userId, date);
 
         assertEquals(BigDecimal.valueOf(1200.50), result);
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
@@ -243,7 +241,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDate(userId, date);
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByUserIdAndDateAndStatusSuccess(userId, date);
 
         assertEquals(BigDecimal.ZERO, result);
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
@@ -258,7 +256,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByDateForAllUsers(date);
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByDateAndStatusSuccessForAllUsers(date);
 
         assertEquals(BigDecimal.valueOf(5000.00), result);
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
@@ -272,7 +270,7 @@ class PaymentLogsQueryServiceTest {
         when(mongoTemplate.aggregate(any(Aggregation.class), eq("payments"), eq(Document.class)))
                 .thenReturn(aggregationResults);
 
-        BigDecimal result = paymentLogsQueryService.findPaymentSumByDateForAllUsers(date);
+        BigDecimal result = paymentLogsQueryService.findPaymentSumByDateAndStatusSuccessForAllUsers(date);
 
         assertEquals(BigDecimal.ZERO, result);
         verify(mongoTemplate).aggregate(any(Aggregation.class), eq("payments"), eq(Document.class));
