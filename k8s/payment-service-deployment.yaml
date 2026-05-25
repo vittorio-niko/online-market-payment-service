@@ -14,6 +14,7 @@ spec:
       labels:
         app: payment-service
     spec:
+      enableServiceLinks: false
       initContainers:
         - name: wait-for-mongo-replica
           image: mongo:6.0

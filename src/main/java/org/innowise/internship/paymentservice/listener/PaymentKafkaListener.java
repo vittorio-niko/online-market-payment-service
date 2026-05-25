@@ -2,6 +2,7 @@ package org.innowise.internship.paymentservice.listener;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.innowise.internship.paymentservice.bankclient.BankClient;
 import org.innowise.internship.paymentservice.bankclient.BankPaymentStatus;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentInboxRequestDto;
@@ -12,6 +13,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PaymentKafkaListener {
@@ -22,6 +24,7 @@ public class PaymentKafkaListener {
             groupId = "payment-group"
     )
     public void listen(@Payload @Valid CreatePaymentInboxRequestDto dto) {
+        log.info("Received payment request for payment with id {}", dto.getPaymentId());
         inboxService.reserve(dto);
     }
 }

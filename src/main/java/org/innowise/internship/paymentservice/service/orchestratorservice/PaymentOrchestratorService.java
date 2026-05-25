@@ -1,6 +1,7 @@
 package org.innowise.internship.paymentservice.service.orchestratorservice;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.innowise.internship.paymentservice.model.dto.log.request.CreatePaymentLogRequestDto;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentInboxRequestDto;
 import org.innowise.internship.paymentservice.model.dto.messagerequest.PaymentResultEventDto;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentOrchestratorService {
@@ -39,6 +41,8 @@ public class PaymentOrchestratorService {
         CreatePaymentLogRequestDto logDto = paymentInboxRequestMapper.toCreatePaymentLogRequestDto(record);
         logDto.setStatus(status.name());
         var paymentLog = paymentLogsService.createPaymentLog(logDto);
+        log.info("Payment with id {} for order {} is finalized with status {}",
+                paymentLog.getPaymentId(), paymentLog.getOrderId(), paymentLog.getStatus());
 
         outboxService.reserve(
                 paymentOutboxRequestMapper.toCreatePaymentOutboxRequestDto(paymentLog)
