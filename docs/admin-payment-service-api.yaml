@@ -1,0 +1,751 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API (Admin)
+  description: API for managing payments with ADMIN role privileges.
+  version: 1.0.0
+servers:
+  - url: http://market.local
+    description: Local development server
+
+paths:
+  /admin/payments/{paymentId}:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get detailed payment log by payment ID
+      operationId: getPaymentLogByPaymentId
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: Unique payment identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLogResponseDto'
+        '400':
+          description: Invalid argument (e.g., malformed paymentId)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_ARGUMENT
+                message: Payment ID cannot be empty
+                fieldErrors: null
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: UNAUTHORIZED
+                message: Full authentication is required to access this resource
+                fieldErrors: null
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: FORBIDDEN
+                message: Access denied. ADMIN role required.
+                fieldErrors: null
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: Payment with id '123' not found
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INTERNAL_ERROR
+                message: Unexpected error
+                fieldErrors: null
+      security:
+        - BearerAuth: []
+
+  /admin/payments/orders/{orderId}:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get payment logs by order ID
+      operationId: getPaymentLogsByOrderId
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Order ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentLogSummaryResponseDto'
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No payments found for the order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: No payments found for order id '12345'
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/users/{userId}:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get user payments with pagination
+      operationId: getPaymentLogsByUserId
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number (starting from 0)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          description: Sorting parameters (e.g., "timestamp,desc")
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePaymentLogSummaryResponseDto'
+        '400':
+          description: Invalid arguments (e.g., invalid page/size values)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_ARGUMENT
+                message: Validation failed
+                fieldErrors:
+                  size: "must be between 1 and 100"
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found or no payments exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: User with id 'user123' not found
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/users/{userId}/payment-sum:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get user's successful payment sum for a specific date
+      operationId: getPaymentSumByUserIdAndDate
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          description: Date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSumResponseDto'
+        '400':
+          description: Invalid date format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_ARGUMENT
+                message: Validation failed
+                fieldErrors:
+                  date: "must be a valid date in format YYYY-MM-DD"
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No payments found for the user on the given date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: No payments found for user 'user123' on date '2024-01-15'
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/users/{userId}/payment-sum/range:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get user's successful payment sum for a date range
+      operationId: getPaymentSumByUserIdAndDateRange
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: true
+          description: Start date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSumResponseDto'
+        '400':
+          description: Invalid date range or format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: INVALID_ARGUMENT
+                message: Validation failed
+                fieldErrors:
+                  startDate: "must be a valid date in format YYYY-MM-DD"
+                  endDate: "must be after startDate"
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No payments found for the user in the given date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: No payments found for user 'user123' between '2024-01-01' and '2024-01-31'
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/daily-sum:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get system-wide daily payment sum for a specific date
+      operationId: getDailyPaymentSumByDate
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyPaymentSumLogResponseDto'
+        '400':
+          description: Invalid date format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No daily payment log found for the given date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: RESOURCE_NOT_FOUND
+                message: Daily payment log for date '2024-01-15' not found
+                fieldErrors: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/daily-sum/range:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get daily payment sums for a date range with pagination
+      operationId: getDailyPaymentSumsByDateRange
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          description: Page number (starting from 0)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          description: Sorting parameters (e.g., "date,desc")
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageDailyPaymentSumLogResponseDto'
+        '400':
+          description: Invalid date range or pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+  /admin/payments/daily-sum/range/total:
+    get:
+      tags:
+        - Admin Payments
+      summary: Get total system-wide payment sum for all users in a date range
+      operationId: getTotalPaymentSumForAllUsersByDateRange
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: Start date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date in ISO format (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSumResponseDto'
+        '400':
+          description: Invalid date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access forbidden (ADMIN role required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: []
+
+components:
+  schemas:
+    PaymentLogResponseDto:
+      type: object
+      required:
+        - paymentId
+        - orderId
+        - userId
+        - status
+        - timestamp
+        - paymentAmount
+      properties:
+        paymentId:
+          type: string
+          description: Unique payment identifier
+        orderId:
+          type: integer
+          format: int64
+          description: Order ID
+        userId:
+          type: string
+          description: User ID
+        status:
+          type: string
+          description: Payment status
+        timestamp:
+          type: string
+          format: date-time
+          description: Payment timestamp (ISO 8601)
+        paymentAmount:
+          type: number
+          format: decimal
+          description: Payment amount
+
+    PaymentLogSummaryResponseDto:
+      type: object
+      required:
+        - orderId
+        - userId
+        - status
+        - timestamp
+        - paymentAmount
+      properties:
+        orderId:
+          type: integer
+          format: int64
+          description: Order ID
+        userId:
+          type: string
+          description: User ID
+        status:
+          type: string
+          description: Payment status
+        timestamp:
+          type: string
+          format: date-time
+          description: Payment timestamp (ISO 8601)
+        paymentAmount:
+          type: number
+          format: decimal
+          description: Payment amount
+
+    PaymentSumResponseDto:
+      type: object
+      required:
+        - paymentSum
+      properties:
+        paymentSum:
+          type: number
+          format: decimal
+          description: Total payment sum
+
+    DailyPaymentSumLogResponseDto:
+      type: object
+      required:
+        - date
+        - paymentSum
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the aggregated payments
+        paymentSum:
+          type: number
+          format: decimal
+          description: Total payment sum for the date
+
+    PagePaymentLogSummaryResponseDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentLogSummaryResponseDto'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+            pageSize:
+              type: integer
+            sort:
+              type: object
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        last:
+          type: boolean
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          type: object
+        first:
+          type: boolean
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean
+
+    PageDailyPaymentSumLogResponseDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyPaymentSumLogResponseDto'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+            pageSize:
+              type: integer
+            sort:
+              type: object
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+        last:
+          type: boolean
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          type: object
+        first:
+          type: boolean
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      description: Standard error response format used across all endpoints
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - RESOURCE_NOT_FOUND
+            - INVALID_ARGUMENT
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - INTERNAL_ERROR
+          example: INVALID_ARGUMENT
+        message:
+          type: string
+          description: Human-readable error description
+          example: Validation failed
+        fieldErrors:
+          type: object
+          description: Map of field names to validation error messages (only for validation errors)
+          additionalProperties:
+            type: string
+          nullable: true
+          example:
+            paymentId: "must not be blank"
+            orderId: "must be a positive number"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication (requires ADMIN role)
