@@ -1,0 +1,83 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  threads:
+    virtual:
+      enabled: true
+
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI}
+      write-concern:
+        w: majority
+        journal: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: "org.innowise.internship.paymentservice.model.dto.messagerequest.CreatePaymentInboxRequestDto"
+        spring.json.trusted.packages: "org.innowise.internship.paymentservice"
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+    listener:
+      ack-mode: record
+      concurrency: 5
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/test-realm
+
+mongock:
+  enabled: true
+  migration-scan-package:
+    - org.innowise.internship.paymentservice.migrations
+  migration-repository-name: mongockChangeLog
+  lock-repository-name: mongockLock
+
+app:
+  kafka:
+    topics:
+      payment-requests:
+        name: "payment-requests-topic"
+        partitions: 3
+        replicas: 3
+      payment-results:
+        name: "payment-results-topic"
+        partitions: 3
+        replicas: 3
+    inbox:
+      processing-delay: 100
+      batch-size: 100
+      days-to-store-records: 3
+    outbox:
+      publish-delay: 100
+      batch-size: 100
+      days-to-store-records: 3
+      retries: 5
+      recover-stuck-delay-min: 1
+
+logging:
+  level:
+    io.mongock: DEBUG
+
+server:
+  port: ${SERVER_PORT}
