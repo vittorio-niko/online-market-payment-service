@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-setup
+spec:
+  template:
+    spec:
+      containers:
+        - name: db-setup
+          image: mongo:6.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until timeout 1 bash -c "cat < /dev/null > /dev/tcp/payment-db/27017" 2>/dev/null; do sleep 2; done
+
+              mongosh --host payment-db -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval '
+                const config = { _id: "rs0", members: [{ _id: 0, host: "payment-db:27017" }] };
+                try {
+                  rs.reconfig(config, { force: true });
+                  console.log("RECONFIG SUCCESS: Now using payment-db name");
+                } catch (e) {
+                  rs.initiate(config);
+                  console.log("INITIATE SUCCESS");
+                }
+              '
+          envFrom:
+            - secretRef:
+                name: payment-db-secret
+      restartPolicy: OnFailure
