@@ -1,0 +1,28 @@
+# Maven / Gradle build output
+target/
+build/
+
+# IDE files
+*.iml
+.idea/
+.vscode/
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Node modules if any (just in case)
+node_modules/
